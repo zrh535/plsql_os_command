@@ -3,17 +3,6 @@ set echo off
 set timing off
 set feedback off
 
-prompt *
-prompt *      **      **  
-prompt *    ****    ****  
-prompt *      **      **      ******
-prompt *      **      **    **     **
-prompt *      **      **      ******* 
-prompt *      **      **           **
-prompt *    ******  ******  *******
-prompt *
-prompt
-
 prompt *************************************************
 prompt ** 1. Installing Java Code ...
 prompt **

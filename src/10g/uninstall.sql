@@ -3,13 +3,12 @@ drop package os_command
 drop package lob_writer_plsql
 /
 /* drop types from Version 0.1 */
-drop type OSCOMMAND_VC2_ARRAY 
+drop type OSCOMMAND_VC2_ARRAY
 /
 drop type OSCOMMAND_DIR_ARRAY
 /
 drop type OSCOMMAND_DIR_ENTRY
 /
-
 drop type FILE_LIST_TYPE
 /
 drop type FILE_TYPE
@@ -22,7 +21,6 @@ drop java source "OS_HELPER"
 /
 drop java source "FILE_TYPE_JAVA"
 /
-
 drop public synonym OS_COMMAND
 /
 drop public synonym lob_writer_plsql
