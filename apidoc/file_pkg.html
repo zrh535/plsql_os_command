@@ -1,0 +1,587 @@
+<HTML>
+<HEAD>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<TITLE>File and operating system interaction with SQL and PLSQL</TITLE>
+<LINK TITLE="Style" HREF="stylesheet.css" TYPE="text/css" REL="stylesheet">
+</HEAD>
+<BODY BGCOLOR="white">
+<TABLE CELLSPACING="0" CELLPADDING="1" WIDTH="100%" BORDER="0">
+<TR>
+<TD CLASS="NavBarRow1" COLSPAN="2">
+<TABLE CELLSPACING="3" CELLPADDING="0" BORDER="0">
+<TR VALIGN="top" ALIGN="center">
+<TD CLASS="NavBarRow1"><A HREF="summary.html"><FONT CLASS="NavBarFont1"><B>Overview</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="deprecated-list.html"><FONT CLASS="NavBarFont1"><B>Deprecated</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="index-list.html"><FONT CLASS="NavBarFont1"><B>Index</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="generator.html"><FONT CLASS="NavBarFont1"><B>Generator</B></FONT></A> &nbsp;</TD>
+</TR>
+</TABLE>
+</TD><TD rowspan="3" VALIGN="top" ALIGN="right"><EM><b>File and operating system interaction with SQL and PLSQL</b></EM></TD>
+</TR>
+<TR>
+<TD CLASS="NavBarRow3" VALIGN="top"><FONT SIZE="-2">
+      SUMMARY:  <A HREF="#field_summary">FIELD</A> | <A HREF="#type_summary">TYPE</A> | <A HREF="#method_summary">METHOD</A></FONT></TD><TD CLASS="NavBarRow3" VALIGN="top"><FONT SIZE="-2">
+    DETAIL:  <A HREF="#field_detail">FIELD</A> | <A HREF="#type_detail">TYPE</A> | <A HREF="#method_detail">METHOD</A></FONT></TD>
+</TR>
+</TABLE>
+<HR>
+<H2>
+<FONT SIZE="-1"></FONT>
+<BR>
+    Package  file_pkg</H2><b>FILE_PKG</b> is a helper package for obtaining file handles. A file handle can either
+be obtained as a single handle or as a virtual table of file handles using the table functions
+<P></P>
+<DL></DL>
+<HR>
+<P></P>
+<A NAME="field_summary"></A><A NAME="type_summary"></A><A NAME="method_summary"></A>
+<TABLE WIDTH="100%" CELLSPACING="0" CELLPADDING="3" BORDER="1">
+<TR CLASS="TableHeadingColor">
+<TD COLSPAN="2"><FONT SIZE="+2"><B>Method Summary</B></FONT></TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;file_type</CODE></FONT></TD><TD><CODE><B><A HREF="#get_file(varchar2)">get_file</A></B>(p_file_path varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      gets a simple file handle.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;file_type</CODE></FONT></TD><TD><CODE><B><A HREF="#get_file(varchar2,varchar2)">get_file</A></B>(p_directory varchar2, p_filename varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      gets a simple file handle by directory object and file name.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;file_type</CODE></FONT></TD><TD><CODE><B><A HREF="#get_file(bfile)">get_file</A></B>(p_bfile bfile)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      gets a simple file handle by BFILE.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;file_list_type</CODE></FONT></TD><TD><CODE><B><A HREF="#get_file_list(file_type)">get_file_list</A></B>(p_directory file_type)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      gets all file handles in a directory (directory listing) as a virtual table.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;file_list_type</CODE></FONT></TD><TD><CODE><B><A HREF="#get_file_list(varchar2)">get_file_list</A></B>(p_directory_name varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      gets all file handles in a directory (directory listing) as a virtual table.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;file_list_type</CODE></FONT></TD><TD><CODE><B><A HREF="#get_file_list_p(file_type)">get_file_list_p</A></B>(p_directory file_type)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      gets all file handles in a directory (directory listing) as a virtual table.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;file_list_type</CODE></FONT></TD><TD><CODE><B><A HREF="#get_file_list_p(varchar2)">get_file_list_p</A></B>(p_directory_name varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      gets all file handles in a directory (directory listing) as a virtual table.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;varchar2</CODE></FONT></TD><TD><CODE><B><A HREF="#get_fs_encoding">get_fs_encoding</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      gets the current file system encoding
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;varchar2</CODE></FONT></TD><TD><CODE><B><A HREF="#get_path_separator">get_path_separator</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      returns the operating system-specific path separator character; "/" on Unix, "\" on Windows.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;file_list_type</CODE></FONT></TD><TD><CODE><B><A HREF="#get_recursive_file_list(file_type)">get_recursive_file_list</A></B>(p_directory file_type)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      gets all file handles in a directory and recursively in all subdirectories (directory listing) as a virtual table.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;file_list_type</CODE></FONT></TD><TD><CODE><B><A HREF="#get_recursive_file_list_p(file_type)">get_recursive_file_list_p</A></B>(p_directory file_type)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      gets all file handles in a directory and recursively in all subdirectories (directory listing) as a virtual table.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;file_list_type</CODE></FONT></TD><TD><CODE><B><A HREF="#get_root_directories">get_root_directories</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      gets file handles for all root directories (one for each drive letter on windows platforms) as a virtual table.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;file_type</CODE></FONT></TD><TD><CODE><B><A HREF="#get_root_directory">get_root_directory</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      returns file handle for the root directory (the first drive letter on windows platforms).</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;varchar2</CODE></FONT></TD><TD><CODE><B><A HREF="#remove_multiple_separators(varchar2)">remove_multiple_separators</A></B>(p_path varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      This function "normalizes" a file path by removing trailing slashes and multiple
+slashes within the path.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#set_fs_encoding(varchar2,boolean)">set_fs_encoding</A></B>(p_fs_encoding varchar2, p_reset_session boolean)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      sets the encoding to use for file names.</TD>
+</TR>
+</TABLE>
+<P></P>
+<A NAME="trigger_summary"></A><A NAME="field_detail"></A><A NAME="type_detail"></A><A NAME="method_detail"></A>
+<TABLE WIDTH="100%" CELLSPACING="0" CELLPADDING="3" BORDER="1">
+<TR CLASS="TableHeadingColor">
+<TD COLSPAN="1"><FONT SIZE="+2"><B>Method Detail</B></FONT></TD>
+</TR>
+</TABLE>
+<A NAME="get_file(varchar2)"></A>
+<H3>get_file</H3>
+<PRE>public file_type <B>get_file</B>(p_file_path varchar2)</PRE>
+<DL>
+<DD>gets a simple file handle. A handle is always being returned, even if the file does not exist.
+<pre>
+SQL&gt; select file_pkg.get_file('/home/oracle/nonexisting_file.txt') file_handle from duaL;
+
+FILE_HANDLE
+----------------------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/nonexisting_file.txt', NULL, NULL, NULL, NULL, NULL, NULL, <b>'N'</b>)
+
+SQL&gt; select file_pkg.get_file('/home/oracle/existing_file.txt') file_handle from dual;
+
+FILE_EXISTS
+---------------------------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/existing_file.txt', 'existing_file.txt', 0, '03.02.10', 'N', 'Y', 'Y', 'Y')
+</pre>
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_file_path</CODE> -
+              the absolute path to the file</DD>
+</DT>
+<DT>Returns:
+          <DD>the file handle</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="get_file_list(file_type)"></A>
+<H3>get_file_list</H3>
+<PRE>public file_list_type <B>get_file_list</B>(p_directory file_type)</PRE>
+<DL>
+<DD>gets all file handles in a directory (directory listing) as a virtual table.
+This function is used best in a SQL SELECT statement<br>
+<pre>select * from table(file_pkg.get_file_list(file_pkg.get_file('/')))</pre>
+This function allows operations on multiple files within a single SQL SELECT command. The following
+SQL gets the content of all files in a directory as a BLOB:<br>
+<pre>select value(e).get_content_as_blob() from table(file_pkg.get_file_list(file_pkg.get_file('/'))) e</pre>
+<br/>
+<b>Note:</b> This function prepares the full table in memory before returning - use the new
+<tt>GET_FILE_LIST_P</tt> function for optimized memory usage and better performance.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_directory</CODE> -
+              Directory from which the file handles to be obtained</DD>
+</DT>
+<DT>Returns:
+          <DD>Table of file handles</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="get_recursive_file_list(file_type)"></A>
+<H3>get_recursive_file_list</H3>
+<PRE>public file_list_type <B>get_recursive_file_list</B>(p_directory file_type)</PRE>
+<DL>
+<DD>gets all file handles in a directory and recursively in all subdirectories (directory listing) as a virtual table.
+This function is used best in a SQL SELECT statement<br>
+<pre>select * from table(file_pkg.get_file_list(file_pkg.get_file('/')))</pre>
+This function allows operations on multiple files within a single SQL SELECT command. The following
+SQL gets the content of all files in a directory as a BLOB:<br>
+<pre>select value(e).get_content_as_blob() from table(file_pkg.get_recursive_file_list(file_pkg.get_file('/'))) e</pre>
+<br/>
+<b>Note:</b> This function prepares the full table in memory before returning - use the new
+<tt>GET_RECURSIVE_FILE_LIST_P</tt> function for optimized memory usage and better performance.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_directory</CODE> -
+              Directory from which the file handles to be obtained</DD>
+</DT>
+<DT>Returns:
+          <DD>Table of file handles</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="get_path_separator"></A>
+<H3>get_path_separator</H3>
+<PRE>public varchar2 <B>get_path_separator</B>()</PRE>
+<DL>
+<DD>returns the operating system-specific path separator character; "/" on Unix, "\" on Windows. Can be used
+to determine the operating system the Oracle instance is running on.
+</DD>
+<DD>
+<DL>
+<DT>Returns:
+          <DD>the path separator char</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="get_root_directories"></A>
+<H3>get_root_directories</H3>
+<PRE>public file_list_type <B>get_root_directories</B>()</PRE>
+<DL>
+<DD>gets file handles for all root directories (one for each drive letter on windows platforms) as a virtual table.
+</DD>
+<DD>
+<DL>
+<DT>Returns:
+          <DD>Table of file handles</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="get_root_directory"></A>
+<H3>get_root_directory</H3>
+<PRE>public file_type <B>get_root_directory</B>()</PRE>
+<DL>
+<DD>returns file handle for the root directory (the first drive letter on windows platforms).
+<pre>
+SQL&gt; select file_pkg.get_root_directory() ROOT from dual;
+
+ROOT
+--------------------------------------------------------------------------------
+FILE_TYPE('/', '', 4096, '22.01.10', 'Y', 'N', 'Y', 'Y')
+</pre>
+</DD>
+<DD>
+<DL>
+<DT>Returns:
+          <DD>file handle</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="get_recursive_file_list_p(file_type)"></A>
+<H3>get_recursive_file_list_p</H3>
+<PRE>public file_list_type <B>get_recursive_file_list_p</B>(p_directory file_type)</PRE>
+<DL>
+<DD>gets all file handles in a directory and recursively in all subdirectories (directory listing) as a virtual table.
+This function is used best in a SQL SELECT statement<br>
+<pre>select * from table(file_pkg.get_file_list(file_pkg.get_file('/')))</pre>
+This function allows operations on multiple files within a single SQL SELECT command. The following
+SQL gets the content of all files in a directory as a BLOB:<br>
+<pre>select value(e).get_content_as_blob() from table(file_pkg.get_recursive_file_list(file_pkg.get_file('/'))) e</pre>
+<br/>
+<b>Note:</b> This new function returns the directory listing <i>pipelined</i>, which leads
+to optimized memory usage and better performance. Use this function instead of the "old" <tt>GET_RECURSIVE_FILE_LIST</tt>
+function.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_directory</CODE> -
+              Directory from which the file handles to be obtained</DD>
+</DT>
+<DT>Returns:
+          <DD>Table of file handles</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.9</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="get_file_list_p(file_type)"></A>
+<H3>get_file_list_p</H3>
+<PRE>public file_list_type <B>get_file_list_p</B>(p_directory file_type)</PRE>
+<DL>
+<DD>gets all file handles in a directory (directory listing) as a virtual table.
+This function is used best in a SQL SELECT statement<br>
+<pre>select * from table(file_pkg.get_file_list(file_pkg.get_file('/')))</pre>
+This function allows operations on multiple files within a single SQL SELECT command. The following
+SQL gets the content of all files in a directory as a BLOB:<br>
+<pre>select value(e).get_content_as_blob() from table(file_pkg.get_file_list(file_pkg.get_file('/'))) e</pre>
+<br/>
+<b>Note:</b> This new function returns the directory listing <i>pipelined</i>, which leads
+to optimized memory usage and better performance. Use this function instead of the "old" <tt>GET_FILE_LIST</tt>
+function.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_directory</CODE> -
+              Directory from which the file handles to be obtained</DD>
+</DT>
+<DT>Returns:
+          <DD>Table of file handles</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.9</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="set_fs_encoding(varchar2,boolean)"></A>
+<H3>set_fs_encoding</H3>
+<PRE>public  <B>set_fs_encoding</B>(p_fs_encoding varchar2, <BR>                        p_reset_session boolean)</PRE>
+<DL>
+<DD>sets the encoding to use for file names. This procedure is important when the
+database encoding does <b>not</b> match the filesystem encoding and filenames
+contain non-ASCII characters. In a Unicode database on a windows system
+with "windows-1252" filesystem encoding the procedure is being used as follows:
+<pre>file_pkg.set_fs_encoding('windows-1252');</pre>
+On a 10g database this call <b>must</b> be executed before the very first
+file system access.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_fs_encoding</CODE> -
+              The encoding to use for filesystem access; e.g. windows-1252, iso-8859-1, utf-8</DD>
+<DD>
+<CODE>p_reset_session</CODE> -
+              <b>11g and higher</b>: Reset java session before (default is <b>true</b>).</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.9.3</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="get_fs_encoding"></A>
+<H3>get_fs_encoding</H3>
+<PRE>public varchar2 <B>get_fs_encoding</B>()</PRE>
+<DL>
+<DD>gets the current file system encoding
+</DD>
+<DD>
+<DL>
+<DT>Returns:
+          <DD>the current file system encoding</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="get_file(varchar2,varchar2)"></A>
+<H3>get_file</H3>
+<PRE>public file_type <B>get_file</B>(p_directory varchar2, <BR>                          p_filename varchar2)</PRE>
+<DL>
+<DD>gets a simple file handle by directory object and file name. The directory object must
+exist and be accessible for the current user (ALL_DIRECTORIES). If an invalid directory
+object is given, the function throws an exception. If the filename is NULL, the
+returned file handle represents the directory object itself.
+<pre>
+SQL&gt; select file_pkg.get_file('HOMEDIR', 'existing_file.txt') file_handle from dual;
+
+FILE_HANDLE
+---------------------------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/existing_file.txt', 'existing_file.txt', 0, '03.02.10', 'N', 'Y', 'Y', 'Y')
+</pre>
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_directory</CODE> -
+              the name of the directory object</DD>
+<DD>
+<CODE>p_filename</CODE> -
+              the file name</DD>
+</DT>
+<DT>Returns:
+          <DD>the file handle</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="get_file(bfile)"></A>
+<H3>get_file</H3>
+<PRE>public file_type <B>get_file</B>(p_bfile bfile)</PRE>
+<DL>
+<DD>gets a simple file handle by BFILE. The directory object within the BFILE must
+exist and be accessible for the current user (ALL_DIRECTORIES). If the BFILE contains an invalid directory
+object, the function throws an exception.
+<pre>
+SQL&gt; select file_pkg.get_file(bfilename('HOMEDIR', 'existing_file.txt')) file_handle from dual;
+
+FILE_HANDLE
+---------------------------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/existing_file.txt', 'existing_file.txt', 0, '03.02.10', 'N', 'Y', 'Y', 'Y')
+</pre>
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_bfile</CODE> -
+              the bfile object</DD>
+</DT>
+<DT>Returns:
+          <DD>the file handle</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="get_file_list(varchar2)"></A>
+<H3>get_file_list</H3>
+<PRE>public file_list_type <B>get_file_list</B>(p_directory_name varchar2)</PRE>
+<DL>
+<DD>gets all file handles in a directory (directory listing) as a virtual table. This function
+expects the name of an existing directory object as VARCHAR2. If the given directory object
+does not exist or is not accessible, an exception is thrown.  The function is used best
+in a SQL SELECT statement<br>
+<pre>select * from table(file_pkg.get_file_list('HOMEDIR'))</pre>
+This function allows operations on multiple files within a single SQL SELECT command. The following
+SQL gets the content of all files in a directory as a BLOB:<br>
+<pre>select value(e).get_content_as_blob() from table(file_pkg.get_file_list('HOMEDIR')) e</pre>
+<br/>
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_directory_name</CODE> -
+              name of an existing directory object to be listed</DD>
+</DT>
+<DT>Returns:
+          <DD>Table of file handles</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="get_file_list_p(varchar2)"></A>
+<H3>get_file_list_p</H3>
+<PRE>public file_list_type <B>get_file_list_p</B>(p_directory_name varchar2)</PRE>
+<DL>
+<DD>gets all file handles in a directory (directory listing) as a virtual table. This function
+expects the name of an existing directory object as VARCHAR2. If the given directory object
+does not exist or is not accessible, an exception is thrown.  The function is used best
+in a SQL SELECT statement<br>
+<pre>select * from table(file_pkg.get_file_list('HOMEDIR'))</pre>
+This function allows operations on multiple files within a single SQL SELECT command. The following
+SQL gets the content of all files in a directory as a BLOB:<br>
+<pre>select value(e).get_content_as_blob() from table(file_pkg.get_file_list('HOMEDIR')) e</pre>
+<br/>
+<b>Note:</b> This new function returns the directory listing <i>pipelined</i>, which leads
+to optimized memory usage and better performance. Use this function instead of the "old" <tt>GET_FILE_LIST</tt>
+function.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_directory_name</CODE> -
+              name of an existing directory object to be listed</DD>
+</DT>
+<DT>Returns:
+          <DD>Table of file handles</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="remove_multiple_separators(varchar2)"></A>
+<H3>remove_multiple_separators</H3>
+<PRE>public varchar2 <B>remove_multiple_separators</B>(p_path varchar2)</PRE>
+<DL>
+<DD>This function "normalizes" a file path by removing trailing slashes and multiple
+slashes within the path. Useful to compare file paths.
+<pre>
+select file_pkg.remove_multiple_separators('/path//to///a/file/') as NORMALIZED_PATH from dual;
+
+NORMALIZED_PATH
+-------------------------
+/pah/to/a/file
+</pre>
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_path</CODE> -
+              filesystem path to normalize</DD>
+</DT>
+<DT>Returns:
+          <DD>the normalized path</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="trigger_detail"></A>
+<TABLE CELLSPACING="0" CELLPADDING="1" WIDTH="100%" BORDER="0">
+<TR>
+<TD CLASS="NavBarRow1" COLSPAN="2">
+<TABLE CELLSPACING="3" CELLPADDING="0" BORDER="0">
+<TR VALIGN="top" ALIGN="center">
+<TD CLASS="NavBarRow1"><A HREF="summary.html"><FONT CLASS="NavBarFont1"><B>Overview</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="deprecated-list.html"><FONT CLASS="NavBarFont1"><B>Deprecated</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="index-list.html"><FONT CLASS="NavBarFont1"><B>Index</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="generator.html"><FONT CLASS="NavBarFont1"><B>Generator</B></FONT></A> &nbsp;</TD>
+</TR>
+</TABLE>
+</TD><TD rowspan="3" VALIGN="top" ALIGN="right"><EM><b>File and operating system interaction with SQL and PLSQL</b></EM></TD>
+</TR>
+<TR>
+<TD CLASS="NavBarRow3" VALIGN="top"><FONT SIZE="-2">
+      SUMMARY:  <A HREF="#field_summary">FIELD</A> | <A HREF="#type_summary">TYPE</A> | <A HREF="#method_summary">METHOD</A></FONT></TD><TD CLASS="NavBarRow3" VALIGN="top"><FONT SIZE="-2">
+    DETAIL:  <A HREF="#field_detail">FIELD</A> | <A HREF="#type_detail">TYPE</A> | <A HREF="#method_detail">METHOD</A></FONT></TD>
+</TR>
+</TABLE>
+<HR>
+</BODY>
+</HTML>

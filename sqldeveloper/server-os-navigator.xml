@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="windows-1252" ?>
+<!--
+/*
+       Copyright 2009 Carsten Czarski
+
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+/*
+ * Script:       Filesystem viewer: Navigator tree extensions
+ * Author:       Carsten Czarski [carsten.czarski@oracle.com]
+ */
+-->
+
+
+<navigator RESOURCE_FILE="oracle.dbtools.raptor.navigator.OracleNavigatorResource"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="navigator.xsd">
+    <objectType connType="Oracle" id="OS_FILESYSTEM" weight="1000.0" includesSyns="true">
+      <folder>
+            <icon RSKEY="/oracle/dbtools/raptor/images/type_folder.png"/>
+            <label RSKEY="Server Filesystem"/>
+            <queries>
+                <query minversion="9" >
+                    <sql constrained="true">
+                        <![CDATA[select file_name, file_path from table(file_pkg.get_file_list_p(file_pkg.get_file('/'))) where is_dir='Y']]>
+                    </sql>
+                </query>
+                <columns>
+                    <column filterable="false" sortable="false" id="NAME">
+                        <colName>
+                            <![CDATA[FILE_NAME]]>
+                        </colName>
+                    </column>
+                    <column filterable="true" sortable="true" id="FILE_PATH">
+                        <colName>
+                            <![CDATA[FILE_PATH]]>
+                        </colName>
+                    </column>
+                </columns>
+            </queries>
+        </folder>
+        <node>
+         <icon RSKEY="/oracle/dbtools/raptor/images/type_folder.png"/>
+         <childType id="OS_FILESYSTEM" nodeType="OS_FILESYSTEM">
+         <queries>
+           <query>
+                     <sql constrained="true">
+                        <![CDATA[select file_name, file_path from table(file_pkg.get_file_list_p(file_pkg.get_file(:FILE_PATH))) where is_dir='Y']]>
+                     </sql>
+                <columns>
+                    <column filterable="false" sortable="false" id="NAME">
+                        <colName>
+                            <![CDATA[FILE_NAME]]>
+                        </colName>
+                    </column>
+                    <column filterable="true" sortable="true" id="FILE_PATH">
+                        <colName>
+                            <![CDATA[FILE_PATH]]>
+                        </colName>
+                    </column>
+                </columns>
+           </query>
+         </queries>
+       </childType>
+      </node>
+    </objectType>
+  </navigator>

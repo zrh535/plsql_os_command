@@ -1,0 +1,66 @@
+*
+*
+* Version (last entry indicates must current version): 
+* =====================================================
+*
+* 0.1 (2008/01/14) 
+* - initial version 
+*
+* 0.2 (2008/01/18) 
+* - added various overloaded functions to get also the return codes 
+*   from the OS call 
+* - enhanced the function GET_FILE_LIST; now it returns additional file
+*   attributes and not just the file name 
+* - moved the WRITE_BLOB_TO_FILE procedure into an own package 
+* - added a procedure WRITE_CLOB to the new package 
+*
+* 0.5 (2008/03/09) 
+* - completely reorganized code into separate java classes and PL/SQL packages 
+* + FILE_TYPE: Object type for file operations 
+* + FILE_PKG: PL/SQL package with accessor methods for the file system 
+* + OS_COMMAND: PL/SQL package for executing shell commands 
+* + LOB_WRITER_PLSQL: PL/SQL package for writing LOBs to files using UTL_FILE 
+*
+* 0.6 (2008/11/10) 
+* - added support for environment variables in OS_COMMAND 
+* - added support for defining a "working dir" in OS_COMMAND 
+* - changed auth model of FILE_TYPE to invoker's rights (authid CURRENT_USER) 
+* - FILE_TYPE no longer requires Java WRITE privileges to read a file 
+* - added methods for retrieving root directories to FILE_PKG 
+* - added method for retrieving the path separator char to FILE_PKG 
+* - added get_parent method to FILE_TYPE 
+*
+* 0.6.1 (2008/12/15) 
+* - fixed bug: directory listing (FILE_PKG.GET_FILE_LIST) now works also with 
+*   non readable files in the directory. AccessControlException 
+*   is no longer thrown 
+*
+* 0.6.2 (2009/10/23)
+* - fixed bug encountered on 11.2 with OS_COMMAND package: 
+*   java.lang.SQLException: Invalid argument(s) in call
+*
+* 0.9 (2010/02/01)
+* - added input stream support in FILE_TYPE
+* - added new "pipelined" functions for FILE_PKG.GET_FILE_LIST and GET_RECURSIVE_FILE_LIST for
+*   better performance and more efficient memory usage
+* - added methods for executing a command in a shell in OS_COMMAND
+*   (this allows complex commands to be run with the EXEC_... calls)
+* - added a SQL Developer extension
+*
+* 0.9.1 (2010/06/21)
+* - fixed a big in the exec_* procedures. The package now handles also bigger data streams on
+*   stdout and does not block any more. 
+*
+* 0.9.2 (2010/07/21)
+* - fixed bug "IllegalTheadStateException" when stdout is not being retrieved by the user
+*
+* 1.0RC1 (2011/01/30)
+* - added procedure FILE_PKG.SET_FS_ENCODING to set the file system encoding different from the database encoding
+* - added P_STDERR attribute to OS_COMMAND.EXEC procedures in order to handle STDERR output separately
+* - internal object optimizations: folder listings performance improvements
+*
+* 1.0 (2013/12/10)
+* - added support for Oracle12c
+* - added the FILE_TYPE.GET_FREE_SPACE method: determines free space left on a device
+* - added BFILE / DIRECTORY object integration into FILE_PKG and FILE_TYPE
+*

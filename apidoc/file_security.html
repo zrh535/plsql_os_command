@@ -1,0 +1,323 @@
+<HTML>
+<HEAD>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<TITLE>File and operating system interaction with SQL and PLSQL</TITLE>
+<LINK TITLE="Style" HREF="stylesheet.css" TYPE="text/css" REL="stylesheet">
+</HEAD>
+<BODY BGCOLOR="white">
+<TABLE CELLSPACING="0" CELLPADDING="1" WIDTH="100%" BORDER="0">
+<TR>
+<TD CLASS="NavBarRow1" COLSPAN="2">
+<TABLE CELLSPACING="3" CELLPADDING="0" BORDER="0">
+<TR VALIGN="top" ALIGN="center">
+<TD CLASS="NavBarRow1"><A HREF="summary.html"><FONT CLASS="NavBarFont1"><B>Overview</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="deprecated-list.html"><FONT CLASS="NavBarFont1"><B>Deprecated</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="index-list.html"><FONT CLASS="NavBarFont1"><B>Index</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="generator.html"><FONT CLASS="NavBarFont1"><B>Generator</B></FONT></A> &nbsp;</TD>
+</TR>
+</TABLE>
+</TD><TD rowspan="3" VALIGN="top" ALIGN="right"><EM><b>File and operating system interaction with SQL and PLSQL</b></EM></TD>
+</TR>
+<TR>
+<TD CLASS="NavBarRow3" VALIGN="top"><FONT SIZE="-2">
+      SUMMARY:  <A HREF="#field_summary">FIELD</A> | <A HREF="#type_summary">TYPE</A> | <A HREF="#method_summary">METHOD</A></FONT></TD><TD CLASS="NavBarRow3" VALIGN="top"><FONT SIZE="-2">
+    DETAIL:  <A HREF="#field_detail">FIELD</A> | <A HREF="#type_detail">TYPE</A> | <A HREF="#method_detail">METHOD</A></FONT></TD>
+</TR>
+</TABLE>
+<HR>
+<H2>
+<FONT SIZE="-1"></FONT>
+<BR>
+    Package  file_security</H2>Helper package for granting java file permissions. Can be used instead of
+DBMS_JAVA calls.
+<P></P>
+<DL></DL>
+<HR>
+<P></P>
+<A NAME="field_summary"></A>
+<TABLE WIDTH="100%" CELLSPACING="0" CELLPADDING="3" BORDER="1">
+<TR CLASS="TableHeadingColor">
+<TD COLSPAN="2"><FONT SIZE="+2"><B>Field Summary</B></FONT></TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;pls_integer</CODE></FONT></TD><TD><CODE><B><A HREF="#EXEC">EXEC</A></B></CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      EXECUTE permission for a filesystem resource (file or folder)
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;pls_integer</CODE></FONT></TD><TD><CODE><B><A HREF="#READ">READ</A></B></CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      READ permission for a filesystem resource (file or folder)
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;pls_integer</CODE></FONT></TD><TD><CODE><B><A HREF="#WRITE">WRITE</A></B></CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      WRITE permission for a filesystem resource (file or folder)
+</TD>
+</TR>
+</TABLE>
+<P></P>
+<A NAME="type_summary"></A><A NAME="method_summary"></A>
+<TABLE WIDTH="100%" CELLSPACING="0" CELLPADDING="3" BORDER="1">
+<TR CLASS="TableHeadingColor">
+<TD COLSPAN="2"><FONT SIZE="+2"><B>Method Summary</B></FONT></TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;varchar2</CODE></FONT></TD><TD><CODE><B><A HREF="#get_script_grant_java_privs(varchar2,varchar2)">get_script_grant_java_privs</A></B>(p_directory varchar2, p_grantee varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+       generates a SQL scripts with DBMS_JAVA.GRANT_PERMISSION calls according to the
+ privileges granted on the directory object.
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#grant_permission(varchar2,varchar2,pls_integer)">grant_permission</A></B>(p_file_path varchar2, p_grantee varchar2, p_permission pls_integer)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Grants permissions on a file.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#grant_stdin_stdout(varchar2)">grant_stdin_stdout</A></B>(p_grantee varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      grants "file descriptor" read and write permissions - these are needed to access
+STDIN and STDOUT when working with OS_COMMAND.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#restrict_permission(varchar2,varchar2,pls_integer)">restrict_permission</A></B>(p_file_path varchar2, p_grantee varchar2, p_permission pls_integer)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      restricts permissions on a file.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#revoke_permission(varchar2,varchar2,pls_integer)">revoke_permission</A></B>(p_file_path varchar2, p_grantee varchar2, p_permission pls_integer)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      revokes permissions on a file.</TD>
+</TR>
+</TABLE>
+<P></P>
+<A NAME="trigger_summary"></A><A NAME="field_detail"></A>
+<TABLE WIDTH="100%" CELLSPACING="0" CELLPADDING="3" BORDER="1">
+<TR CLASS="TableHeadingColor">
+<TD COLSPAN="1"><FONT SIZE="+2"><B>Field Detail</B></FONT></TD>
+</TR>
+</TABLE>
+<A NAME="READ"></A>
+<H3>READ</H3>
+<PRE>
+  public pls_integer <B>READ</B>
+</PRE>
+<DL>
+<DD>READ permission for a filesystem resource (file or folder)
+</DD>
+<DD>
+<DL></DL>
+</DD>
+</DL>
+<HR>
+<A NAME="WRITE"></A>
+<H3>WRITE</H3>
+<PRE>
+  public pls_integer <B>WRITE</B>
+</PRE>
+<DL>
+<DD>WRITE permission for a filesystem resource (file or folder)
+</DD>
+<DD>
+<DL></DL>
+</DD>
+</DL>
+<HR>
+<A NAME="EXEC"></A>
+<H3>EXEC</H3>
+<PRE>
+  public pls_integer <B>EXEC</B>
+</PRE>
+<DL>
+<DD>EXECUTE permission for a filesystem resource (file or folder)
+</DD>
+<DD>
+<DL></DL>
+</DD>
+</DL>
+<HR>
+<A NAME="type_detail"></A><A NAME="method_detail"></A>
+<TABLE WIDTH="100%" CELLSPACING="0" CELLPADDING="3" BORDER="1">
+<TR CLASS="TableHeadingColor">
+<TD COLSPAN="1"><FONT SIZE="+2"><B>Method Detail</B></FONT></TD>
+</TR>
+</TABLE>
+<A NAME="grant_permission(varchar2,varchar2,pls_integer)"></A>
+<H3>grant_permission</H3>
+<PRE>public  <B>grant_permission</B>(p_file_path varchar2, <BR>                         p_grantee varchar2, <BR>                         p_permission pls_integer)</PRE>
+<DL>
+<DD>Grants permissions on a file.
+<pre>
+file_security.grant_permission(
+p_file_path  => '/home/oracle/*,
+p_grantee    => 'SCOTT',
+p_permission => FILE_SECURITY.READ + FILE_SECURITY.WRITE
+);
+</pre>
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_file_path</CODE> -
+              absolute path to the filesystem resource (file or folder). A star includes
+all files in a folder without the subfolders - a dash (-) includes all
+files in the folder and all subfolders recursively.</DD>
+<DD>
+<CODE>p_grantee</CODE> -
+              database user to which to grant the privileges</DD>
+<DD>
+<CODE>p_permission</CODE> -
+              permissions to grant - use the package constants READ, WRITE and EXECUTE</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="revoke_permission(varchar2,varchar2,pls_integer)"></A>
+<H3>revoke_permission</H3>
+<PRE>public  <B>revoke_permission</B>(p_file_path varchar2, <BR>                          p_grantee varchar2, <BR>                          p_permission pls_integer)</PRE>
+<DL>
+<DD>revokes permissions on a file.
+<pre>
+file_security.revoke_permission(
+p_file_path  => '/home/oracle/*,
+p_grantee    => 'SCOTT',
+p_permission => FILE_SECURITY.READ + FILE_SECURITY.WRITE
+);
+</pre>
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_file_path</CODE> -
+              absolute path to the filesystem resource (file or folder). A star includes
+all files in a folder without the subfolders - a dash (-) includes all
+files in the folder and all subfolders recursively.</DD>
+<DD>
+<CODE>p_grantee</CODE> -
+              database user to which to grant the privileges</DD>
+<DD>
+<CODE>p_permission</CODE> -
+              permissions to grant - use the package constants READ, WRITE and EXECUTE</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="restrict_permission(varchar2,varchar2,pls_integer)"></A>
+<H3>restrict_permission</H3>
+<PRE>public  <B>restrict_permission</B>(p_file_path varchar2, <BR>                            p_grantee varchar2, <BR>                            p_permission pls_integer)</PRE>
+<DL>
+<DD>restricts permissions on a file. This is a function to work with "negative" privileges. An example
+might be to use GRANT_PERMISSION to grant access to a folder and the use
+RESTRICT_PERMISSION to exempt particular files.
+<pre>
+file_security.restrict_permission(
+p_file_path  => '/home/oracle/*,
+p_grantee    => 'SCOTT',
+p_permission => FILE_SECURITY.READ + FILE_SECURITY.WRITE
+);
+</pre>
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_file_path</CODE> -
+              absolute path to the filesystem resource (file or folder). A star includes
+all files in a folder without the subfolders - a dash (-) includes all
+files in the folder and all subfolders recursively.</DD>
+<DD>
+<CODE>p_grantee</CODE> -
+              database user to which to grant the privileges</DD>
+<DD>
+<CODE>p_permission</CODE> -
+              permissions to grant - use the package constants READ, WRITE and EXECUTE</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="grant_stdin_stdout(varchar2)"></A>
+<H3>grant_stdin_stdout</H3>
+<PRE>public  <B>grant_stdin_stdout</B>(p_grantee varchar2)</PRE>
+<DL>
+<DD>grants "file descriptor" read and write permissions - these are needed to access
+STDIN and STDOUT when working with OS_COMMAND.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_grantee</CODE> -
+              database user to which to grant the privileges</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="get_script_grant_java_privs(varchar2,varchar2)"></A>
+<H3>get_script_grant_java_privs</H3>
+<PRE>public varchar2 <B>get_script_grant_java_privs</B>(p_directory varchar2, <BR>                                            p_grantee varchar2)</PRE>
+<DL>
+<DD> generates a SQL scripts with DBMS_JAVA.GRANT_PERMISSION calls according to the
+ privileges granted on the directory object.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_directory</CODE> -
+              name of the directory object</DD>
+<DD>
+<CODE>p_grantee</CODE> -
+              grantee to generate grants for. If none is given, grants are
+                     being generated for all grantees</DD>
+</DT>
+<DT>Returns:
+          <DD>SQL script containing DBMS_JAVA.GRANT_PERMISSION calls for the given directory object</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="trigger_detail"></A>
+<TABLE CELLSPACING="0" CELLPADDING="1" WIDTH="100%" BORDER="0">
+<TR>
+<TD CLASS="NavBarRow1" COLSPAN="2">
+<TABLE CELLSPACING="3" CELLPADDING="0" BORDER="0">
+<TR VALIGN="top" ALIGN="center">
+<TD CLASS="NavBarRow1"><A HREF="summary.html"><FONT CLASS="NavBarFont1"><B>Overview</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="deprecated-list.html"><FONT CLASS="NavBarFont1"><B>Deprecated</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="index-list.html"><FONT CLASS="NavBarFont1"><B>Index</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="generator.html"><FONT CLASS="NavBarFont1"><B>Generator</B></FONT></A> &nbsp;</TD>
+</TR>
+</TABLE>
+</TD><TD rowspan="3" VALIGN="top" ALIGN="right"><EM><b>File and operating system interaction with SQL and PLSQL</b></EM></TD>
+</TR>
+<TR>
+<TD CLASS="NavBarRow3" VALIGN="top"><FONT SIZE="-2">
+      SUMMARY:  <A HREF="#field_summary">FIELD</A> | <A HREF="#type_summary">TYPE</A> | <A HREF="#method_summary">METHOD</A></FONT></TD><TD CLASS="NavBarRow3" VALIGN="top"><FONT SIZE="-2">
+    DETAIL:  <A HREF="#field_detail">FIELD</A> | <A HREF="#type_detail">TYPE</A> | <A HREF="#method_detail">METHOD</A></FONT></TD>
+</TR>
+</TABLE>
+<HR>
+</BODY>
+</HTML>

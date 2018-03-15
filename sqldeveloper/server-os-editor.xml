@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+/*
+       Copyright 2009 Carsten Czarski
+
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+/*
+ * Script:       Filesystem viewer extension: Editor view
+ * Author:       Carsten Czarski [carsten.czarski@oracle.com]
+ */
+-->
+
+
+<displays><display id="ea767ce9-0122-1000-8001-0aa5fa725636" type="" style="Table" enable="true" class="Oracle#OS_FILESYSTEM" objectType="OS_FILESYSTEM">
+	<name><![CDATA[Files in a folder]]></name>
+	<description><![CDATA[]]></description>
+	<tooltip><![CDATA[]]></tooltip>
+	<drillclass><![CDATA[null]]></drillclass>
+	<CustomValues>
+		<TYPE>horizontal</TYPE>
+	</CustomValues>
+	<query>
+		<sql><![CDATA[select 
+  file_path,
+  file_name,
+  file_size,
+  last_modified
+from table(file_pkg.get_file_list_p(file_pkg.get_file(nvl(:FILE_PATH, '/'))))
+where is_dir = 'N']]></sql>
+		<binds>
+			<bind id="SERVER_PATH">
+				<prompt><![CDATA[SERVER_PATH]]></prompt>
+				<tooltip><![CDATA[SERVER_PATH]]></tooltip>
+				<value><![CDATA[/home/oracle]]></value>
+			</bind>
+		</binds>
+	</query>
+	<display id="null" type="Child" style="Table" enable="true">
+		<name><![CDATA[Datei laden ]]></name>
+		<description><![CDATA[]]></description>
+		<tooltip><![CDATA[]]></tooltip>
+		<drillclass><![CDATA[null]]></drillclass>
+		<CustomValues>
+		</CustomValues>
+		<query>
+			<sql><![CDATA[select file_pkg.get_file(:FILE_PATH).get_content_as_blob() file_content from dual where file_pkg.get_file(:FILE_PATH).is_dir ='N']]></sql>
+			<binds>
+				<bind id="FILE_PATH">
+					<prompt><![CDATA[FILE_PATH]]></prompt>
+					<tooltip><![CDATA[FILE_PATH]]></tooltip>
+					<value><![CDATA[NULL_VALUE]]></value>
+				</bind>
+			</binds>
+		</query>
+	</display>
+</display>
+</displays>
+

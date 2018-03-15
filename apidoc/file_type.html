@@ -1,0 +1,1263 @@
+<HTML>
+<HEAD>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<TITLE>File and operating system interaction with SQL and PLSQL</TITLE>
+<LINK TITLE="Style" HREF="stylesheet.css" TYPE="text/css" REL="stylesheet">
+</HEAD>
+<BODY BGCOLOR="white">
+<TABLE CELLSPACING="0" CELLPADDING="1" WIDTH="100%" BORDER="0">
+<TR>
+<TD CLASS="NavBarRow1" COLSPAN="2">
+<TABLE CELLSPACING="3" CELLPADDING="0" BORDER="0">
+<TR VALIGN="top" ALIGN="center">
+<TD CLASS="NavBarRow1"><A HREF="summary.html"><FONT CLASS="NavBarFont1"><B>Overview</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="deprecated-list.html"><FONT CLASS="NavBarFont1"><B>Deprecated</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="index-list.html"><FONT CLASS="NavBarFont1"><B>Index</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="generator.html"><FONT CLASS="NavBarFont1"><B>Generator</B></FONT></A> &nbsp;</TD>
+</TR>
+</TABLE>
+</TD><TD rowspan="3" VALIGN="top" ALIGN="right"><EM><b>File and operating system interaction with SQL and PLSQL</b></EM></TD>
+</TR>
+<TR>
+<TD CLASS="NavBarRow3" VALIGN="top"><FONT SIZE="-2">
+      SUMMARY:  <A HREF="#field_summary">FIELD</A> | <A HREF="#type_summary">TYPE</A> | <A HREF="#method_summary">METHOD</A></FONT></TD><TD CLASS="NavBarRow3" VALIGN="top"><FONT SIZE="-2">
+    DETAIL:  <A HREF="#field_detail">FIELD</A> | <A HREF="#type_detail">TYPE</A> | <A HREF="#method_detail">METHOD</A></FONT></TD>
+</TR>
+</TABLE>
+<HR>
+<H2>
+<FONT SIZE="-1"></FONT>
+<BR>
+    Package  FILE_TYPE</H2> <b>FILE_TYPE</b> is an object type and
+ represents a file handle. A file handle points to an existent or
+ non-existent file in the database server's filesystem. All file
+ operations are done as the operating user under which the Oracle
+ executable runs. FILE_TYPE has the following attributes:<br>
+ <br>
+ <table style="border: 1px solid black;">
+   <tbody>
+     <tr>
+       <td><b><tt>file_path</tt></b></td>
+       <td><tt>VARCHAR2(4000)</tt></td>
+       <td>The full path to the file</td>
+     </tr>
+     <tr>
+       <td><b><tt>file_name</tt></b></td>
+       <td><tt>VARCHAR2(4000)</tt></td>
+       <td>The simple name of the file</td>
+     </tr>
+     <tr>
+       <td><b><tt>file_size</tt></b></td>
+       <td><tt>NUMBER</tt></td>
+       <td>The size of the file in bytes</td>
+     </tr>
+     <tr>
+       <td><b><tt>is_dir</tt></b></td>
+       <td><tt>CHAR(1)</tt></td>
+       <td>'Y' when the file is a directory, 'N' otherwise</td>
+     </tr>
+     <tr>
+       <td><b><tt>is_writeable</tt></b></td>
+       <td><tt>CHAR(1)</tt></td>
+       <td>'Y' when the file is writeable, 'N' otherwise</td>
+     </tr>
+     <tr>
+       <td><b><tt>is_readable</tt></b></td>
+       <td><tt>CHAR(1)</tt></td>
+       <td>'Y' when the file is readable, 'N' otherwise</td>
+     </tr>
+     <tr>
+       <td><b><tt>file_exists</tt></b></td>
+       <td><tt>CHAR(1)</tt></td>
+       <td>'Y' when the handle points a an existing file; 'N'
+ otherwise</td>
+     </tr>
+   </tbody>
+ </table>
+ <br>
+ A file handle can point to existing files as well as to nonexisting
+ files. The last attribute <b>file_exists</b> denotes
+ whether the file handle points to an existing file. If not all other
+ attributes except the <b>file_path</b> and the <b>file_name</b>
+ are NULL. <br>
+ <br>
+ Example I: Obtaining a file handle for the /tmp directory (see
+ documentation for FILE_PKG) </p>
+ <pre> SQL&gt; select file_pkg.get_file('/tmp') from dual;<br> <br>
+  FILE_PKG.GET_FILE('/TMP')(FILE_PATH, FILE_NAME, FILE_SIZE, LAST_MODIFIED, IS_DIR
+  --------------------------------------------------------------------------------
+  FILE_TYPE('/tmp', 'tmp', 77824, '26.03.08', 'Y', 'Y', 'Y', 'Y')
+  </pre>
+ Example II: Obtaining a file handle for the (nonexisting) /tmp1
+ directory (see documentation for FILE_PKG)
+ <pre> SQL&gt; select file_pkg.get_file('/tmp1') from dual;<br> <br>
+  FILE_PKG.GET_FILE('/TMP1')(FILE_PATH, FILE_NAME, FILE_SIZE, LAST_MODIFIED, IS_DI
+  --------------------------------------------------------------------------------
+  FILE_TYPE('/tmp1', NULL, NULL, NULL, NULL, NULL, NULL, 'N')
+  </pre>
+ <br>
+ The database user needs appropriate java privileges in order to operate
+ on operating system files. The DBA must provide proper privileges using
+ the built-in package DBMS_JAVA. The following call for example grants
+ the privileges to read the directory <b>/tmp</b> and its
+ contents to the database user <b>SCOTT</b>:
+ <pre>begin<br>   dbms_java.grant_permission(<br>     grantee =&gt;           'SCOTT',<br>     permission_type =&gt;   'SYS:java.io.FilePermission',<br>     permission_name =&gt;   '/tmp/*',<br>     permission_action =&gt; 'read'<br>   );<br>end;<br> </pre>
+ To grant read and write access to the whole file system, issue ...
+ <pre>begin<br>   dbms_java.grant_permission(<br>     grantee =&gt;           'SCOTT',<br>     permission_type =&gt;   'SYS:java.io.FilePermission',<br>     permission_name =&gt;   '/-',<br>     permission_action =&gt; 'read,write'<br>   );<br>end;<br> </pre>
+<P></P>
+<DL></DL>
+<HR>
+<P></P>
+<A NAME="field_summary"></A>
+<TABLE WIDTH="100%" CELLSPACING="0" CELLPADDING="3" BORDER="1">
+<TR CLASS="TableHeadingColor">
+<TD COLSPAN="2"><FONT SIZE="+2"><B>Field Summary</B></FONT></TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;char(1)</CODE></FONT></TD><TD><CODE><B><A HREF="#file_exists">file_exists</A></B></CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Flag whether this file exists - if a file does not exist, all attributes except
+this and the full pathname are set to SQL NULL.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;varchar2(4000)</CODE></FONT></TD><TD><CODE><B><A HREF="#file_name">file_name</A></B></CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Filename
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;varchar2(4000)</CODE></FONT></TD><TD><CODE><B><A HREF="#file_path">file_path</A></B></CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Full absolute path to this file
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#file_size">file_size</A></B></CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      File size in bytes
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;char(1)</CODE></FONT></TD><TD><CODE><B><A HREF="#is_dir">is_dir</A></B></CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Flag whether this file is a directory ("Y"); "N" otherwise
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;char(1)</CODE></FONT></TD><TD><CODE><B><A HREF="#is_readable">is_readable</A></B></CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Flag whether this file is readable
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;char(1)</CODE></FONT></TD><TD><CODE><B><A HREF="#is_writeable">is_writeable</A></B></CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Flag whether this file is writeable
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;date</CODE></FONT></TD><TD><CODE><B><A HREF="#last_modified">last_modified</A></B></CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      LastModified date of this file
+</TD>
+</TR>
+</TABLE>
+<P></P>
+<A NAME="type_summary"></A><A NAME="method_summary"></A>
+<TABLE WIDTH="100%" CELLSPACING="0" CELLPADDING="3" BORDER="1">
+<TR CLASS="TableHeadingColor">
+<TD COLSPAN="2"><FONT SIZE="+2"><B>Method Summary</B></FONT></TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#append_to_file(clob)">append_to_file</A></B>(p_content clob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      appends to a file
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#append_to_file(blob)">append_to_file</A></B>(p_content blob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      appends to a file
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#append_to_file(varchar2)">append_to_file</A></B>(p_content varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      appends to a file
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#close_stream">close_stream</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Closes the "Input Stream".</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;file_type</CODE></FONT></TD><TD><CODE><B><A HREF="#copy(file_type)">copy</A></B>(p_target_file file_type)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      copies the file.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;FILE_TYPE</CODE></FONT></TD><TD><CODE><B><A HREF="#create_dir(varchar2)">create_dir</A></B>(p_dirname varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Creates a new empty directory.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;file_type</CODE></FONT></TD><TD><CODE><B><A HREF="#create_file(varchar2)">create_file</A></B>(p_filename varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Creates a new empty file.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;file_type</CODE></FONT></TD><TD><CODE><B><A HREF="#delete_file">delete_file</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      deletes the file or directory.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;file_type</CODE></FONT></TD><TD><CODE><B><A HREF="#delete_recursive">delete_recursive</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      deletes the file or directory.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;bfile</CODE></FONT></TD><TD><CODE><B><A HREF="#get_bfile(varchar2)">get_bfile</A></B>(p_directory_name varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      returns a BFILE object, which represents this file handle.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;blob</CODE></FONT></TD><TD><CODE><B><A HREF="#get_content_as_blob">get_content_as_blob</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Returns the file contents as a BLOB.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;clob</CODE></FONT></TD><TD><CODE><B><A HREF="#get_content_as_clob(varchar2)">get_content_as_clob</A></B>(p_charset varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Returns the file contents as a CLOB.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;varchar2</CODE></FONT></TD><TD><CODE><B><A HREF="#get_directory">get_directory</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Looks up a directory object which represents either, if the file handle is a directory, the handle itself, or
+the folder in which the file handle resides in.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;file_type</CODE></FONT></TD><TD><CODE><B><A HREF="#get_file(varchar2)">get_file</A></B>(p_file_path varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      gets a simple file handle.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#get_free_space">get_free_space</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      returns the space (in bytes), which is available on the device containing this file handle.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;file_type</CODE></FONT></TD><TD><CODE><B><A HREF="#get_parent">get_parent</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Returns the parent directory
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#is_stream_open">is_stream_open</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Checks whether an Input Stream is open on the file.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;file_type</CODE></FONT></TD><TD><CODE><B><A HREF="#make_all_dirs">make_all_dirs</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Creates a new empty directory similar to MAKE_DIR.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;FILE_TYPE</CODE></FONT></TD><TD><CODE><B><A HREF="#make_dir">make_dir</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Creates a new empty directory.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;FILE_TYPE</CODE></FONT></TD><TD><CODE><B><A HREF="#make_file">make_file</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Creates a new empty file.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;file_type</CODE></FONT></TD><TD><CODE><B><A HREF="#move(file_type)">move</A></B>(p_target_file file_type)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      performs a "move" / "rename" operation
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#open_stream">open_stream</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Opens an "Input Stream" on the file.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#read_byte">read_byte</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Reads a single byte from the file input stream.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;raw</CODE></FONT></TD><TD><CODE><B><A HREF="#read_bytes(number)">read_bytes</A></B>(p_amount number)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Reads the given amount of bytes from the file input stream.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;raw</CODE></FONT></TD><TD><CODE><B><A HREF="#read_bytes(number,number)">read_bytes</A></B>(p_amount number, p_position number)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      reads the specified amount of bytes at the specified position from the file.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;varchar2</CODE></FONT></TD><TD><CODE><B><A HREF="#read_string(number,varchar2)">read_string</A></B>(p_amount number, p_charset varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Reads the given amount of characters from the file input stream
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;varchar2</CODE></FONT></TD><TD><CODE><B><A HREF="#read_string(number,number,varchar2)">read_string</A></B>(p_amount number, p_position number, p_charset varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      reads the specified amount of bytes at the specified position from the file and
+returns them as a string.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#skip_bytes(number)">skip_bytes</A></B>(p_amount number)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Skips the given amount of bytes in the file input stream i.e. moves the "pointer" the given amount of bytes forward.
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#write_bytes(raw,number)">write_bytes</A></B>(p_bytes raw, p_offset number)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      writes bytes at the specified position to the file.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#write_string(varchar2,number,varchar2)">write_string</A></B>(p_string varchar2, p_offset number, p_charset varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      writes a string at the specified position to the file.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#write_to_file(clob)">write_to_file</A></B>(p_content clob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      writes to a file - existing file content is being overwritten
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#write_to_file(blob)">write_to_file</A></B>(p_content blob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      writes to a file - existing file content is being overwritten
+</TD>
+</TR>
+</TABLE>
+<P></P>
+<A NAME="trigger_summary"></A><A NAME="field_detail"></A>
+<TABLE WIDTH="100%" CELLSPACING="0" CELLPADDING="3" BORDER="1">
+<TR CLASS="TableHeadingColor">
+<TD COLSPAN="1"><FONT SIZE="+2"><B>Field Detail</B></FONT></TD>
+</TR>
+</TABLE>
+<A NAME="file_path"></A>
+<H3>file_path</H3>
+<PRE>
+  public varchar2(4000) <B>file_path</B>
+</PRE>
+<DL>
+<DD>Full absolute path to this file
+</DD>
+<DD>
+<DL></DL>
+</DD>
+</DL>
+<HR>
+<A NAME="file_name"></A>
+<H3>file_name</H3>
+<PRE>
+  public varchar2(4000) <B>file_name</B>
+</PRE>
+<DL>
+<DD>Filename
+</DD>
+<DD>
+<DL></DL>
+</DD>
+</DL>
+<HR>
+<A NAME="file_size"></A>
+<H3>file_size</H3>
+<PRE>
+  public number <B>file_size</B>
+</PRE>
+<DL>
+<DD>File size in bytes
+</DD>
+<DD>
+<DL></DL>
+</DD>
+</DL>
+<HR>
+<A NAME="last_modified"></A>
+<H3>last_modified</H3>
+<PRE>
+  public date <B>last_modified</B>
+</PRE>
+<DL>
+<DD>LastModified date of this file
+</DD>
+<DD>
+<DL></DL>
+</DD>
+</DL>
+<HR>
+<A NAME="is_dir"></A>
+<H3>is_dir</H3>
+<PRE>
+  public char(1) <B>is_dir</B>
+</PRE>
+<DL>
+<DD>Flag whether this file is a directory ("Y"); "N" otherwise
+</DD>
+<DD>
+<DL></DL>
+</DD>
+</DL>
+<HR>
+<A NAME="is_writeable"></A>
+<H3>is_writeable</H3>
+<PRE>
+  public char(1) <B>is_writeable</B>
+</PRE>
+<DL>
+<DD>Flag whether this file is writeable
+</DD>
+<DD>
+<DL></DL>
+</DD>
+</DL>
+<HR>
+<A NAME="is_readable"></A>
+<H3>is_readable</H3>
+<PRE>
+  public char(1) <B>is_readable</B>
+</PRE>
+<DL>
+<DD>Flag whether this file is readable
+</DD>
+<DD>
+<DL></DL>
+</DD>
+</DL>
+<HR>
+<A NAME="file_exists"></A>
+<H3>file_exists</H3>
+<PRE>
+  public char(1) <B>file_exists</B>
+</PRE>
+<DL>
+<DD>Flag whether this file exists - if a file does not exist, all attributes except
+this and the full pathname are set to SQL NULL.
+</DD>
+<DD>
+<DL></DL>
+</DD>
+</DL>
+<HR>
+<A NAME="type_detail"></A><A NAME="method_detail"></A>
+<TABLE WIDTH="100%" CELLSPACING="0" CELLPADDING="3" BORDER="1">
+<TR CLASS="TableHeadingColor">
+<TD COLSPAN="1"><FONT SIZE="+2"><B>Method Detail</B></FONT></TD>
+</TR>
+</TABLE>
+<A NAME="move(file_type)"></A>
+<H3>move</H3>
+<PRE>public file_type <B>move</B>(p_target_file file_type)</PRE>
+<DL>
+<DD>performs a "move" / "rename" operation
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_target_file</CODE> -
+              FILE_TYPE object denoting the new file name and path.</DD>
+</DT>
+<DT>Returns:
+          <DD>FILE_TYPE object pointing to the target file.</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="delete_file"></A>
+<H3>delete_file</H3>
+<PRE>public file_type <B>delete_file</B>()</PRE>
+<DL>
+<DD>deletes the file or directory. If a directory contains other files an error message is thrown.
+<pre>
+SQL&gt; select file_pkg.get_file('/home/oracle/old_file.txt') file_exists from dual;
+
+FILE_EXISTS
+-----------------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/old_file.txt', 'old_file.txt', 0, '03.02.10', 'N', 'Y', 'Y', 'Y')
+
+SQL&gt; select file_pkg.get_file('/home/oracle/old_file.txt').delete_file() file_not_exists from duaL;
+
+FILE_NOT_EXISTS
+--------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/old_file.txt', NULL, NULL, NULL, NULL, NULL, NULL, 'N')
+</pre>
+</DD>
+<DD>
+<DL>
+<DT>Returns:
+          <DD>FILE_TYPE object pointing to the location of the deleted file with the FILE_EXISTS attribute being set to "N"</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="delete_recursive"></A>
+<H3>delete_recursive</H3>
+<PRE>public file_type <B>delete_recursive</B>()</PRE>
+<DL>
+<DD>deletes the file or directory. Directory contents are being deleted recursively.
+</DD>
+<DD>
+<DL>
+<DT>Returns:
+          <DD>FILE_TYPE object pointing to the location of the deleted directory with the FILE_EXISTS attribute being set to "N"</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="make_file"></A>
+<H3>make_file</H3>
+<PRE>public FILE_TYPE <B>make_file</B>()</PRE>
+<DL>
+<DD>Creates a new empty file. Must be called on a FILE_TYPE object with the FILE_EXISTS attribute set to "N"
+<pre>
+SQL&gt; select file_pkg.get_file('/home/oracle/new_file.txt') file_not_exists from duaL;
+
+FILE_NOT_EXISTS
+--------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/new_file.txt', NULL, NULL, NULL, NULL, NULL, NULL, <b>'N'</b>)
+
+SQL&gt; select file_pkg.get_file('/home/oracle/new_file.txt').make_file() file_exists from dual;
+
+FILE_EXISTS
+-----------------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/new_file.txt', 'new_file.txt', 0, '03.02.10', 'N', 'Y', 'Y', 'Y')
+</pre>
+</DD>
+<DD>
+<DL>
+<DT>Returns:
+          <DD>FILE_TYPE object pointing to the new file</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="make_dir"></A>
+<H3>make_dir</H3>
+<PRE>public FILE_TYPE <B>make_dir</B>()</PRE>
+<DL>
+<DD>Creates a new empty directory. Work similar to the MAKE_FILE function.
+</DD>
+<DD>
+<DL>
+<DT>Returns:
+          <DD>FILE_TYPE object pointing the new directory</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="create_dir(varchar2)"></A>
+<H3>create_dir</H3>
+<PRE>public FILE_TYPE <B>create_dir</B>(p_dirname varchar2)</PRE>
+<DL>
+<DD>Creates a new empty directory.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_dirname</CODE> -
+              absolute path to the new directory</DD>
+</DT>
+<DT>Returns:
+          <DD>FILE_TYPE object pointing to the new directory</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="create_file(varchar2)"></A>
+<H3>create_file</H3>
+<PRE>public file_type <B>create_file</B>(p_filename varchar2)</PRE>
+<DL>
+<DD>Creates a new empty file.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_filename</CODE> -
+              absolute path to the new file</DD>
+</DT>
+<DT>Returns:
+          <DD>FILE_TYPE object pointing to the new file</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="copy(file_type)"></A>
+<H3>copy</H3>
+<PRE>public file_type <B>copy</B>(p_target_file file_type)</PRE>
+<DL>
+<DD>copies the file.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_target_file</CODE> -
+              FILE_TYPE object pointing to the target file and path.</DD>
+</DT>
+<DT>Returns:
+          <DD>FILE_TYPE object pointing to the target file.</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="make_all_dirs"></A>
+<H3>make_all_dirs</H3>
+<PRE>public file_type <B>make_all_dirs</B>()</PRE>
+<DL>
+<DD>Creates a new empty directory similar to MAKE_DIR. Creates also all needed parent directories, if not exists.
+</DD>
+<DD>
+<DL>
+<DT>Returns:
+          <DD>FILE_TYPE object pointing to the new directory.</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="get_content_as_clob(varchar2)"></A>
+<H3>get_content_as_clob</H3>
+<PRE>public clob <B>get_content_as_clob</B>(p_charset varchar2)</PRE>
+<DL>
+<DD>Returns the file contents as a CLOB.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_charset</CODE> -
+              encoding of the file contents in IANA notation (e.g. "iso-8859-1")</DD>
+</DT>
+<DT>Returns:
+          <DD>File contents as a CLOB</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="write_to_file(clob)"></A>
+<H3>write_to_file</H3>
+<PRE>public number <B>write_to_file</B>(p_content clob)</PRE>
+<DL>
+<DD>writes to a file - existing file content is being overwritten
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_content</CODE> -
+              CLOB content to be written to the file.</DD>
+</DT>
+<DT>Returns:
+          <DD>new file size in bytes.</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="append_to_file(clob)"></A>
+<H3>append_to_file</H3>
+<PRE>public number <B>append_to_file</B>(p_content clob)</PRE>
+<DL>
+<DD>appends to a file
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_content</CODE> -
+              CLOB content to be appended to the file.</DD>
+</DT>
+<DT>Returns:
+          <DD>new file size in bytes.</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="write_to_file(blob)"></A>
+<H3>write_to_file</H3>
+<PRE>public number <B>write_to_file</B>(p_content blob)</PRE>
+<DL>
+<DD>writes to a file - existing file content is being overwritten
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_content</CODE> -
+              BLOB content to be written to the file.</DD>
+</DT>
+<DT>Returns:
+          <DD>new file size in bytes.</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="append_to_file(blob)"></A>
+<H3>append_to_file</H3>
+<PRE>public number <B>append_to_file</B>(p_content blob)</PRE>
+<DL>
+<DD>appends to a file
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_content</CODE> -
+              BLOB content to be appended to the file.</DD>
+</DT>
+<DT>Returns:
+          <DD>new file size in bytes.</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="append_to_file(varchar2)"></A>
+<H3>append_to_file</H3>
+<PRE>public number <B>append_to_file</B>(p_content varchar2)</PRE>
+<DL>
+<DD>appends to a file
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_content</CODE> -
+              VARCHAR2 content to be appended to the file.</DD>
+</DT>
+<DT>Returns:
+          <DD>new file size in bytes.</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="get_content_as_blob"></A>
+<H3>get_content_as_blob</H3>
+<PRE>public blob <B>get_content_as_blob</B>()</PRE>
+<DL>
+<DD>Returns the file contents as a BLOB.
+</DD>
+<DD>
+<DL>
+<DT>Returns:
+          <DD>File contents as BLOB</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="get_parent"></A>
+<H3>get_parent</H3>
+<PRE>public file_type <B>get_parent</B>()</PRE>
+<DL>
+<DD>Returns the parent directory
+</DD>
+<DD>
+<DL>
+<DT>Returns:
+          <DD>FILE_TYPE object pointing to the parent directory.</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="open_stream"></A>
+<H3>open_stream</H3>
+<PRE>public  <B>open_stream</B>()</PRE>
+<DL>
+<DD>Opens an "Input Stream" on the file. The "Input Stream" allows to read the file contents
+in chunks. The functionality is similar to the Java FileInputStream class.
+</DD>
+<DD>
+<DL></DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.9</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="close_stream"></A>
+<H3>close_stream</H3>
+<PRE>public  <B>close_stream</B>()</PRE>
+<DL>
+<DD>Closes the "Input Stream".
+</DD>
+<DD>
+<DL></DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.9</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="is_stream_open"></A>
+<H3>is_stream_open</H3>
+<PRE>public number <B>is_stream_open</B>()</PRE>
+<DL>
+<DD>Checks whether an Input Stream is open on the file.
+</DD>
+<DD>
+<DL>
+<DT>Returns:
+          <DD>1 if an input stream is open, 0 otherwise</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.9</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="read_bytes(number)"></A>
+<H3>read_bytes</H3>
+<PRE>public raw <B>read_bytes</B>(p_amount number)</PRE>
+<DL>
+<DD>Reads the given amount of bytes from the file input stream.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_amount</CODE> -
+              amount of bytes to read from the stream. Values between 1 and 32767 are allowed.</DD>
+</DT>
+<DT>Returns:
+          <DD>the read bytes as RAW datatype</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.9</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="read_string(number,varchar2)"></A>
+<H3>read_string</H3>
+<PRE>public varchar2 <B>read_string</B>(p_amount number, <BR>                            p_charset varchar2)</PRE>
+<DL>
+<DD>Reads the given amount of characters from the file input stream
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_amount</CODE> -
+              amount of bytes to read from the stream. Values between 1 and 32767 are allowed.</DD>
+<DD>
+<CODE>p_charset</CODE> -
+              encoding of the file contents in IANA notation (e.g. "iso-8859-1")</DD>
+</DT>
+<DT>Returns:
+          <DD>the read characters as VARCHAR2</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.9</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="read_byte"></A>
+<H3>read_byte</H3>
+<PRE>public number <B>read_byte</B>()</PRE>
+<DL>
+<DD>Reads a single byte from the file input stream.
+</DD>
+<DD>
+<DL>
+<DT>Returns:
+          <DD>the read byte</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.9</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="skip_bytes(number)"></A>
+<H3>skip_bytes</H3>
+<PRE>public  <B>skip_bytes</B>(p_amount number)</PRE>
+<DL>
+<DD>Skips the given amount of bytes in the file input stream i.e. moves the "pointer" the given amount of bytes forward.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_amount</CODE> -
+              amount of bytes to skip</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.9</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="write_bytes(raw,number)"></A>
+<H3>write_bytes</H3>
+<PRE>public number <B>write_bytes</B>(p_bytes raw, <BR>                          p_offset number)</PRE>
+<DL>
+<DD>writes bytes at the specified position to the file.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_bytes</CODE> -
+              bytes to write to the file</DD>
+</DT>
+<DT>Returns:
+          <DD>new length of the file</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.9</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="write_string(varchar2,number,varchar2)"></A>
+<H3>write_string</H3>
+<PRE>public number <B>write_string</B>(p_string varchar2, <BR>                           p_offset number, <BR>                           p_charset varchar2)</PRE>
+<DL>
+<DD>writes a string at the specified position to the file.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_string</CODE> -
+              bytes to write to the file</DD>
+<DD>
+<CODE>p_charset</CODE> -
+              encoding of the string</DD>
+</DT>
+<DT>Returns:
+          <DD>new length of the file</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.9</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="read_bytes(number,number)"></A>
+<H3>read_bytes</H3>
+<PRE>public raw <B>read_bytes</B>(p_amount number, <BR>                      p_position number)</PRE>
+<DL>
+<DD>reads the specified amount of bytes at the specified position from the file.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_amount</CODE> -
+              amount of bytes to read</DD>
+<DD>
+<CODE>p_position</CODE> -
+              position in the file</DD>
+</DT>
+<DT>Returns:
+          <DD>the read bytes</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.9</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="read_string(number,number,varchar2)"></A>
+<H3>read_string</H3>
+<PRE>public varchar2 <B>read_string</B>(p_amount number, <BR>                            p_position number, <BR>                            p_charset varchar2)</PRE>
+<DL>
+<DD>reads the specified amount of bytes at the specified position from the file and
+returns them as a string.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_amount</CODE> -
+              amount of bytes to read</DD>
+<DD>
+<CODE>p_position</CODE> -
+              position in the file</DD>
+<DD>
+<CODE>p_charset</CODE> -
+              encoding of the string</DD>
+</DT>
+<DT>Returns:
+          <DD>the read bytes as a string</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.9</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="get_file(varchar2)"></A>
+<H3>get_file</H3>
+<PRE>public file_type <B>get_file</B>(p_file_path varchar2)</PRE>
+<DL>
+<DD>gets a simple file handle. A handle is always being returned, even if the file does not exist.
+<pre>
+SQL&gt; select file_pkg.get_file('/home/oracle/nonexisting_file.txt') file_handle from duaL;
+
+FILE_HANDLE
+----------------------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/nonexisting_file.txt', NULL, NULL, NULL, NULL, NULL, NULL, <b>'N'</b>)
+
+SQL&gt; select file_pkg.get_file('/home/oracle/existing_file.txt') file_handle from dual;
+
+FILE_EXISTS
+---------------------------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/existing_file.txt', 'existing_file.txt', 0, '03.02.10', 'N', 'Y', 'Y', 'Y')
+</pre>
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_file_path</CODE> -
+              the absolute path to the file</DD>
+</DT>
+<DT>Returns:
+          <DD>the file handle</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="get_bfile(varchar2)"></A>
+<H3>get_bfile</H3>
+<PRE>public bfile <B>get_bfile</B>(p_directory_name varchar2)</PRE>
+<DL>
+<DD>returns a BFILE object, which represents this file handle. The file handle must represent a file - folders are not
+allowed. If the parameter P_DIRECTORY_NAME is empty or NULL, the function tries to look up a DIRECTORY object (ALL_DIRECTORIES),
+which matches the folder containing this file handle and uses this to create the BFILE. If none is found, an Exception is thrown.
+If the name of a directory object is given in P_DIRECTORY_NAME, the function uses this to construct the BFILE.
+<pre>
+SQL&gt; select file_pkg.get_file('/home/oracle/exttab-files/test.txt').get_bfile() from dual;
+
+FILE_PKG.GET_FILE('/HOME/ORACLE/EXTTAB-FILES/TEST.TXT').GET_BFILE()
+--------------------------------------------------------------------------------
+bfilename('DIR_EXTTAB_FILES', 'test.txt')
+
+SQL&gt; select file_pkg.get_file('/home/oracle/exttab-files/test.txt').get_bfile('OTHER_DIR') from dual;
+
+FILE_PKG.GET_FILE('/HOME/ORACLE/EXTTAB-FILES/TEST.TXT').GET_BFILE('OTHER_DIR')
+--------------------------------------------------------------------------------
+bfilename('OTHER_DIR', 'test.txt')
+
+1 Zeile wurde ausgewählt.
+
+SQL&gt; select file_pkg.get_file('/home/oracle/exttab-files/subdir').get_bfile('OTHER_DIR') from dual;
+select file_pkg.get_file('/home/oracle/exttab-files/subdir').get_bfile() from dual
+
+ERROR at line 1:
+ORA-20000: CANNOT CONVERT DIRECTORY INTO BFILE
+ORA-06512: at "SYS.FILE_TYPE", line 9
+ORA-06512: at line 1
+</pre>
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_directory_name</CODE> -
+              Name of a directory object to create the BFILE - if given, the function will not try to find one.</DD>
+</DT>
+<DT>Returns:
+          <DD>a BFILE representing this file</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="get_directory"></A>
+<H3>get_directory</H3>
+<PRE>public varchar2 <B>get_directory</B>()</PRE>
+<DL>
+<DD>Looks up a directory object which represents either, if the file handle is a directory, the handle itself, or
+the folder in which the file handle resides in. If no or multiple matching directory objects are found, an
+exception is thrown.
+</DD>
+<DD>
+<DL>
+<DT>Returns:
+          <DD>The name of the matching directory object</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="get_free_space"></A>
+<H3>get_free_space</H3>
+<PRE>public number <B>get_free_space</B>()</PRE>
+<DL>
+<DD>returns the space (in bytes), which is available on the device containing this file handle. Only
+available on <b>Oracle 12.1</b> or higher.
+</DD>
+<DD>
+<DL>
+<DT>Returns:
+          <DD>free space on the device in bytes</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL></DL>
+</DL>
+<HR>
+<A NAME="trigger_detail"></A>
+<TABLE CELLSPACING="0" CELLPADDING="1" WIDTH="100%" BORDER="0">
+<TR>
+<TD CLASS="NavBarRow1" COLSPAN="2">
+<TABLE CELLSPACING="3" CELLPADDING="0" BORDER="0">
+<TR VALIGN="top" ALIGN="center">
+<TD CLASS="NavBarRow1"><A HREF="summary.html"><FONT CLASS="NavBarFont1"><B>Overview</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="deprecated-list.html"><FONT CLASS="NavBarFont1"><B>Deprecated</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="index-list.html"><FONT CLASS="NavBarFont1"><B>Index</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="generator.html"><FONT CLASS="NavBarFont1"><B>Generator</B></FONT></A> &nbsp;</TD>
+</TR>
+</TABLE>
+</TD><TD rowspan="3" VALIGN="top" ALIGN="right"><EM><b>File and operating system interaction with SQL and PLSQL</b></EM></TD>
+</TR>
+<TR>
+<TD CLASS="NavBarRow3" VALIGN="top"><FONT SIZE="-2">
+      SUMMARY:  <A HREF="#field_summary">FIELD</A> | <A HREF="#type_summary">TYPE</A> | <A HREF="#method_summary">METHOD</A></FONT></TD><TD CLASS="NavBarRow3" VALIGN="top"><FONT SIZE="-2">
+    DETAIL:  <A HREF="#field_detail">FIELD</A> | <A HREF="#type_detail">TYPE</A> | <A HREF="#method_detail">METHOD</A></FONT></TD>
+</TR>
+</TABLE>
+<HR>
+</BODY>
+</HTML>

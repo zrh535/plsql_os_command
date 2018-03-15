@@ -1,0 +1,2313 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE APPLICATION SYSTEM "application.dtd">
+<APPLICATION NAME="File and operating system interaction with SQL and PLSQL">
+<PACKAGE NAME="FILE_TYPE" SCHEMA="">
+<COMMENT><![CDATA[ <b>FILE_TYPE</b> is an object type and
+ represents a file handle. A file handle points to an existent or
+ non-existent file in the database server's filesystem. All file
+ operations are done as the operating user under which the Oracle
+ executable runs. FILE_TYPE has the following attributes:<br>
+ <br>
+ <table style="border: 1px solid black;">
+   <tbody>
+     <tr>
+       <td><b><tt>file_path</tt></b></td>
+       <td><tt>VARCHAR2(4000)</tt></td>
+       <td>The full path to the file</td>
+     </tr>
+     <tr>
+       <td><b><tt>file_name</tt></b></td>
+       <td><tt>VARCHAR2(4000)</tt></td>
+       <td>The simple name of the file</td>
+     </tr>
+     <tr>
+       <td><b><tt>file_size</tt></b></td>
+       <td><tt>NUMBER</tt></td>
+       <td>The size of the file in bytes</td>
+     </tr>
+     <tr>
+       <td><b><tt>is_dir</tt></b></td>
+       <td><tt>CHAR(1)</tt></td>
+       <td>'Y' when the file is a directory, 'N' otherwise</td>
+     </tr>
+     <tr>
+       <td><b><tt>is_writeable</tt></b></td>
+       <td><tt>CHAR(1)</tt></td>
+       <td>'Y' when the file is writeable, 'N' otherwise</td>
+     </tr>
+     <tr>
+       <td><b><tt>is_readable</tt></b></td>
+       <td><tt>CHAR(1)</tt></td>
+       <td>'Y' when the file is readable, 'N' otherwise</td>
+     </tr>
+     <tr>
+       <td><b><tt>file_exists</tt></b></td>
+       <td><tt>CHAR(1)</tt></td>
+       <td>'Y' when the handle points a an existing file; 'N'
+ otherwise</td>
+     </tr>
+   </tbody>
+ </table>
+ <br>
+ A file handle can point to existing files as well as to nonexisting
+ files. The last attribute <b>file_exists</b> denotes
+ whether the file handle points to an existing file. If not all other
+ attributes except the <b>file_path</b> and the <b>file_name</b>
+ are NULL. <br>
+ <br>
+ Example I: Obtaining a file handle for the /tmp directory (see
+ documentation for FILE_PKG) </p>
+ <pre> SQL&gt; select file_pkg.get_file('/tmp') from dual;<br> <br>
+  FILE_PKG.GET_FILE('/TMP')(FILE_PATH, FILE_NAME, FILE_SIZE, LAST_MODIFIED, IS_DIR
+  --------------------------------------------------------------------------------
+  FILE_TYPE('/tmp', 'tmp', 77824, '26.03.08', 'Y', 'Y', 'Y', 'Y')
+  </pre>
+ Example II: Obtaining a file handle for the (nonexisting) /tmp1
+ directory (see documentation for FILE_PKG)
+ <pre> SQL&gt; select file_pkg.get_file('/tmp1') from dual;<br> <br>
+  FILE_PKG.GET_FILE('/TMP1')(FILE_PATH, FILE_NAME, FILE_SIZE, LAST_MODIFIED, IS_DI
+  --------------------------------------------------------------------------------
+  FILE_TYPE('/tmp1', NULL, NULL, NULL, NULL, NULL, NULL, 'N')
+  </pre>
+ <br>
+ The database user needs appropriate java privileges in order to operate
+ on operating system files. The DBA must provide proper privileges using
+ the built-in package DBMS_JAVA. The following call for example grants
+ the privileges to read the directory <b>/tmp</b> and its
+ contents to the database user <b>SCOTT</b>:
+ <pre>begin<br>   dbms_java.grant_permission(<br>     grantee =&gt;           'SCOTT',<br>     permission_type =&gt;   'SYS:java.io.FilePermission',<br>     permission_name =&gt;   '/tmp/*',<br>     permission_action =&gt; 'read'<br>   );<br>end;<br> </pre>
+ To grant read and write access to the whole file system, issue ...
+ <pre>begin<br>   dbms_java.grant_permission(<br>     grantee =&gt;           'SCOTT',<br>     permission_type =&gt;   'SYS:java.io.FilePermission',<br>     permission_name =&gt;   '/-',<br>     permission_action =&gt; 'read,write'<br>   );<br>end;<br> </pre>
+]]></COMMENT>
+<VARIABLE NAME="file_path">
+<COMMENT_FIRST_LINE><![CDATA[Full absolute path to this file
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Full absolute path to this file
+]]></COMMENT>
+<RETURN TYPE="varchar2(4000)"/>
+</VARIABLE>
+<VARIABLE NAME="file_name">
+<COMMENT_FIRST_LINE><![CDATA[Filename
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Filename
+]]></COMMENT>
+<RETURN TYPE="varchar2(4000)"/>
+</VARIABLE>
+<VARIABLE NAME="file_size">
+<COMMENT_FIRST_LINE><![CDATA[File size in bytes
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[File size in bytes
+]]></COMMENT>
+<RETURN TYPE="number"/>
+</VARIABLE>
+<VARIABLE NAME="last_modified">
+<COMMENT_FIRST_LINE><![CDATA[LastModified date of this file
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[LastModified date of this file
+]]></COMMENT>
+<RETURN TYPE="date"/>
+</VARIABLE>
+<VARIABLE NAME="is_dir">
+<COMMENT_FIRST_LINE><![CDATA[Flag whether this file is a directory ("Y"); "N" otherwise
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Flag whether this file is a directory ("Y"); "N" otherwise
+]]></COMMENT>
+<RETURN TYPE="char(1)"/>
+</VARIABLE>
+<VARIABLE NAME="is_writeable">
+<COMMENT_FIRST_LINE><![CDATA[Flag whether this file is writeable
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Flag whether this file is writeable
+]]></COMMENT>
+<RETURN TYPE="char(1)"/>
+</VARIABLE>
+<VARIABLE NAME="is_readable">
+<COMMENT_FIRST_LINE><![CDATA[Flag whether this file is readable
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Flag whether this file is readable
+]]></COMMENT>
+<RETURN TYPE="char(1)"/>
+</VARIABLE>
+<VARIABLE NAME="file_exists">
+<COMMENT_FIRST_LINE><![CDATA[Flag whether this file exists - if a file does not exist, all attributes except
+this and the full pathname are set to SQL NULL.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Flag whether this file exists - if a file does not exist, all attributes except
+this and the full pathname are set to SQL NULL.
+]]></COMMENT>
+<RETURN TYPE="char(1)"/>
+</VARIABLE>
+<FUNCTION NAME="move">
+<COMMENT_FIRST_LINE><![CDATA[performs a "move" / "rename" operation
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[performs a "move" / "rename" operation
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_target_file" TYPE="file_type">
+<COMMENT><![CDATA[FILE_TYPE object denoting the new file name and path.]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="file_type">
+<COMMENT><![CDATA[FILE_TYPE object pointing to the target file.]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_target_file FILE_TYPE object denoting the new file name and path.]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[FILE_TYPE object pointing to the target file.]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="delete_file">
+<COMMENT_FIRST_LINE><![CDATA[deletes the file or directory.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[deletes the file or directory. If a directory contains other files an error message is thrown.
+<pre>
+SQL&gt; select file_pkg.get_file('/home/oracle/old_file.txt') file_exists from dual;
+
+FILE_EXISTS
+-----------------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/old_file.txt', 'old_file.txt', 0, '03.02.10', 'N', 'Y', 'Y', 'Y')
+
+SQL&gt; select file_pkg.get_file('/home/oracle/old_file.txt').delete_file() file_not_exists from duaL;
+
+FILE_NOT_EXISTS
+--------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/old_file.txt', NULL, NULL, NULL, NULL, NULL, NULL, 'N')
+</pre>
+]]></COMMENT>
+<RETURN TYPE="file_type">
+<COMMENT><![CDATA[FILE_TYPE object pointing to the location of the deleted file with the FILE_EXISTS attribute being set to "N"]]></COMMENT>
+</RETURN>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[FILE_TYPE object pointing to the location of the deleted file with the FILE_EXISTS attribute being set to "N"]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="delete_recursive">
+<COMMENT_FIRST_LINE><![CDATA[deletes the file or directory.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[deletes the file or directory. Directory contents are being deleted recursively.
+]]></COMMENT>
+<RETURN TYPE="file_type">
+<COMMENT><![CDATA[FILE_TYPE object pointing to the location of the deleted directory with the FILE_EXISTS attribute being set to "N"]]></COMMENT>
+</RETURN>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[FILE_TYPE object pointing to the location of the deleted directory with the FILE_EXISTS attribute being set to "N"]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="make_file">
+<COMMENT_FIRST_LINE><![CDATA[Creates a new empty file.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Creates a new empty file. Must be called on a FILE_TYPE object with the FILE_EXISTS attribute set to "N"
+<pre>
+SQL&gt; select file_pkg.get_file('/home/oracle/new_file.txt') file_not_exists from duaL;
+
+FILE_NOT_EXISTS
+--------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/new_file.txt', NULL, NULL, NULL, NULL, NULL, NULL, <b>'N'</b>)
+
+SQL&gt; select file_pkg.get_file('/home/oracle/new_file.txt').make_file() file_exists from dual;
+
+FILE_EXISTS
+-----------------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/new_file.txt', 'new_file.txt', 0, '03.02.10', 'N', 'Y', 'Y', 'Y')
+</pre>
+]]></COMMENT>
+<RETURN TYPE="FILE_TYPE">
+<COMMENT><![CDATA[FILE_TYPE object pointing to the new file]]></COMMENT>
+</RETURN>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[FILE_TYPE object pointing to the new file]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="make_dir">
+<COMMENT_FIRST_LINE><![CDATA[Creates a new empty directory.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Creates a new empty directory. Work similar to the MAKE_FILE function.
+]]></COMMENT>
+<RETURN TYPE="FILE_TYPE">
+<COMMENT><![CDATA[FILE_TYPE object pointing the new directory]]></COMMENT>
+</RETURN>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[FILE_TYPE object pointing the new directory]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="create_dir">
+<COMMENT_FIRST_LINE><![CDATA[Creates a new empty directory.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Creates a new empty directory.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_dirname" TYPE="varchar2">
+<COMMENT><![CDATA[absolute path to the new directory]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="FILE_TYPE">
+<COMMENT><![CDATA[FILE_TYPE object pointing to the new directory]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_dirname absolute path to the new directory]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[FILE_TYPE object pointing to the new directory]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="create_file">
+<COMMENT_FIRST_LINE><![CDATA[Creates a new empty file.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Creates a new empty file.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_filename" TYPE="varchar2">
+<COMMENT><![CDATA[absolute path to the new file]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="file_type">
+<COMMENT><![CDATA[FILE_TYPE object pointing to the new file]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_filename absolute path to the new file]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[FILE_TYPE object pointing to the new file]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="copy">
+<COMMENT_FIRST_LINE><![CDATA[copies the file.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[copies the file.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_target_file" TYPE="file_type">
+<COMMENT><![CDATA[FILE_TYPE object pointing to the target file and path.]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="file_type">
+<COMMENT><![CDATA[FILE_TYPE object pointing to the target file.]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_target_file FILE_TYPE object pointing to the target file and path.]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[FILE_TYPE object pointing to the target file.]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="make_all_dirs">
+<COMMENT_FIRST_LINE><![CDATA[Creates a new empty directory similar to MAKE_DIR.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Creates a new empty directory similar to MAKE_DIR. Creates also all needed parent directories, if not exists.
+]]></COMMENT>
+<RETURN TYPE="file_type">
+<COMMENT><![CDATA[FILE_TYPE object pointing to the new directory.]]></COMMENT>
+</RETURN>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[FILE_TYPE object pointing to the new directory.]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="get_content_as_clob">
+<COMMENT_FIRST_LINE><![CDATA[Returns the file contents as a CLOB.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Returns the file contents as a CLOB.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_charset" TYPE="varchar2">
+<COMMENT><![CDATA[encoding of the file contents in IANA notation (e.g. "iso-8859-1")]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="clob">
+<COMMENT><![CDATA[File contents as a CLOB]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_charset encoding of the file contents in IANA notation (e.g. "iso-8859-1")]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[File contents as a CLOB]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="write_to_file">
+<COMMENT_FIRST_LINE><![CDATA[writes to a file - existing file content is being overwritten
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[writes to a file - existing file content is being overwritten
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_content" TYPE="clob">
+<COMMENT><![CDATA[CLOB content to be written to the file.]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[new file size in bytes.]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_content CLOB content to be written to the file.]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[new file size in bytes.]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="append_to_file">
+<COMMENT_FIRST_LINE><![CDATA[appends to a file
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[appends to a file
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_content" TYPE="clob">
+<COMMENT><![CDATA[CLOB content to be appended to the file.]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[new file size in bytes.]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_content CLOB content to be appended to the file.]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[new file size in bytes.]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="write_to_file">
+<COMMENT_FIRST_LINE><![CDATA[writes to a file - existing file content is being overwritten
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[writes to a file - existing file content is being overwritten
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_content" TYPE="blob">
+<COMMENT><![CDATA[BLOB content to be written to the file.]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[new file size in bytes.]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_content BLOB content to be written to the file.]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[new file size in bytes.]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="append_to_file">
+<COMMENT_FIRST_LINE><![CDATA[appends to a file
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[appends to a file
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_content" TYPE="blob">
+<COMMENT><![CDATA[BLOB content to be appended to the file.]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[new file size in bytes.]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_content BLOB content to be appended to the file.]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[new file size in bytes.]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="append_to_file">
+<COMMENT_FIRST_LINE><![CDATA[appends to a file
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[appends to a file
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_content" TYPE="varchar2">
+<COMMENT><![CDATA[VARCHAR2 content to be appended to the file.]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[new file size in bytes.]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_content VARCHAR2 content to be appended to the file.]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[new file size in bytes.]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="get_content_as_blob">
+<COMMENT_FIRST_LINE><![CDATA[Returns the file contents as a BLOB.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Returns the file contents as a BLOB.
+]]></COMMENT>
+<RETURN TYPE="blob">
+<COMMENT><![CDATA[File contents as BLOB]]></COMMENT>
+</RETURN>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[File contents as BLOB]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="get_parent">
+<COMMENT_FIRST_LINE><![CDATA[Returns the parent directory
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Returns the parent directory
+]]></COMMENT>
+<RETURN TYPE="file_type">
+<COMMENT><![CDATA[FILE_TYPE object pointing to the parent directory.]]></COMMENT>
+</RETURN>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[FILE_TYPE object pointing to the parent directory.]]></COMMENT>
+</TAG>
+</FUNCTION>
+<PROCEDURE NAME="open_stream">
+<COMMENT_FIRST_LINE><![CDATA[Opens an "Input Stream" on the file.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Opens an "Input Stream" on the file. The "Input Stream" allows to read the file contents
+in chunks. The functionality is similar to the Java FileInputStream class.
+]]></COMMENT>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.9]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<PROCEDURE NAME="close_stream">
+<COMMENT_FIRST_LINE><![CDATA[Closes the "Input Stream".]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Closes the "Input Stream".
+]]></COMMENT>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.9]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<FUNCTION NAME="is_stream_open">
+<COMMENT_FIRST_LINE><![CDATA[Checks whether an Input Stream is open on the file.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Checks whether an Input Stream is open on the file.
+]]></COMMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[1 if an input stream is open, 0 otherwise]]></COMMENT>
+</RETURN>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.9]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[1 if an input stream is open, 0 otherwise]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="read_bytes">
+<COMMENT_FIRST_LINE><![CDATA[Reads the given amount of bytes from the file input stream.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Reads the given amount of bytes from the file input stream.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_amount" TYPE="number">
+<COMMENT><![CDATA[amount of bytes to read from the stream. Values between 1 and 32767 are allowed.]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="raw">
+<COMMENT><![CDATA[the read bytes as RAW datatype]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_amount amount of bytes to read from the stream. Values between 1 and 32767 are allowed.]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.9]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the read bytes as RAW datatype]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="read_string">
+<COMMENT_FIRST_LINE><![CDATA[Reads the given amount of characters from the file input stream
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Reads the given amount of characters from the file input stream
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_amount" TYPE="number">
+<COMMENT><![CDATA[amount of bytes to read from the stream. Values between 1 and 32767 are allowed.]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_charset" TYPE="varchar2">
+<COMMENT><![CDATA[encoding of the file contents in IANA notation (e.g. "iso-8859-1")]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="varchar2">
+<COMMENT><![CDATA[the read characters as VARCHAR2]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_amount amount of bytes to read from the stream. Values between 1 and 32767 are allowed.]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_charset encoding of the file contents in IANA notation (e.g. "iso-8859-1")]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.9]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the read characters as VARCHAR2]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="read_byte">
+<COMMENT_FIRST_LINE><![CDATA[Reads a single byte from the file input stream.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Reads a single byte from the file input stream.
+]]></COMMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[the read byte]]></COMMENT>
+</RETURN>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.9]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the read byte]]></COMMENT>
+</TAG>
+</FUNCTION>
+<PROCEDURE NAME="skip_bytes">
+<COMMENT_FIRST_LINE><![CDATA[Skips the given amount of bytes in the file input stream i.e. moves the "pointer" the given amount of bytes forward.
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Skips the given amount of bytes in the file input stream i.e. moves the "pointer" the given amount of bytes forward.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_amount" TYPE="number">
+<COMMENT><![CDATA[amount of bytes to skip]]></COMMENT>
+</ARGUMENT>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_amount amount of bytes to skip]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.9]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<FUNCTION NAME="write_bytes">
+<COMMENT_FIRST_LINE><![CDATA[writes bytes at the specified position to the file.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[writes bytes at the specified position to the file.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_bytes" TYPE="raw">
+<COMMENT><![CDATA[bytes to write to the file]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_offset" TYPE="number"/>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[new length of the file]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_bytes bytes to write to the file]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_position position in the file where the bytes are to be written]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.9]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[new length of the file]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="write_string">
+<COMMENT_FIRST_LINE><![CDATA[writes a string at the specified position to the file.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[writes a string at the specified position to the file.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_string" TYPE="varchar2">
+<COMMENT><![CDATA[bytes to write to the file]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_offset" TYPE="number"/>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_charset" TYPE="varchar2">
+<COMMENT><![CDATA[encoding of the string]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[new length of the file]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_string bytes to write to the file]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_position position in the file where the string is to be written]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_charset encoding of the string]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.9]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[new length of the file]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="read_bytes">
+<COMMENT_FIRST_LINE><![CDATA[reads the specified amount of bytes at the specified position from the file.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[reads the specified amount of bytes at the specified position from the file.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_amount" TYPE="number">
+<COMMENT><![CDATA[amount of bytes to read]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_position" TYPE="number">
+<COMMENT><![CDATA[position in the file]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="raw">
+<COMMENT><![CDATA[the read bytes]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_amount amount of bytes to read]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_position position in the file]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.9]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the read bytes]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="read_string">
+<COMMENT_FIRST_LINE><![CDATA[reads the specified amount of bytes at the specified position from the file and
+returns them as a string.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[reads the specified amount of bytes at the specified position from the file and
+returns them as a string.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_amount" TYPE="number">
+<COMMENT><![CDATA[amount of bytes to read]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_position" TYPE="number">
+<COMMENT><![CDATA[position in the file]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_charset" TYPE="varchar2">
+<COMMENT><![CDATA[encoding of the string]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="varchar2">
+<COMMENT><![CDATA[the read bytes as a string]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_amount amount of bytes to read]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_position position in the file]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_charset encoding of the string]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.9]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the read bytes as a string]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="get_file">
+<COMMENT_FIRST_LINE><![CDATA[gets a simple file handle.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[gets a simple file handle. A handle is always being returned, even if the file does not exist.
+<pre>
+SQL&gt; select file_pkg.get_file('/home/oracle/nonexisting_file.txt') file_handle from duaL;
+
+FILE_HANDLE
+----------------------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/nonexisting_file.txt', NULL, NULL, NULL, NULL, NULL, NULL, <b>'N'</b>)
+
+SQL&gt; select file_pkg.get_file('/home/oracle/existing_file.txt') file_handle from dual;
+
+FILE_EXISTS
+---------------------------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/existing_file.txt', 'existing_file.txt', 0, '03.02.10', 'N', 'Y', 'Y', 'Y')
+</pre>
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_file_path" TYPE="varchar2">
+<COMMENT><![CDATA[the absolute path to the file]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="file_type">
+<COMMENT><![CDATA[the file handle]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_file_path the absolute path to the file]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the file handle]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="get_bfile">
+<COMMENT_FIRST_LINE><![CDATA[returns a BFILE object, which represents this file handle.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[returns a BFILE object, which represents this file handle. The file handle must represent a file - folders are not
+allowed. If the parameter P_DIRECTORY_NAME is empty or NULL, the function tries to look up a DIRECTORY object (ALL_DIRECTORIES),
+which matches the folder containing this file handle and uses this to create the BFILE. If none is found, an Exception is thrown.
+If the name of a directory object is given in P_DIRECTORY_NAME, the function uses this to construct the BFILE.
+<pre>
+SQL&gt; select file_pkg.get_file('/home/oracle/exttab-files/test.txt').get_bfile() from dual;
+
+FILE_PKG.GET_FILE('/HOME/ORACLE/EXTTAB-FILES/TEST.TXT').GET_BFILE()
+--------------------------------------------------------------------------------
+bfilename('DIR_EXTTAB_FILES', 'test.txt')
+
+SQL&gt; select file_pkg.get_file('/home/oracle/exttab-files/test.txt').get_bfile('OTHER_DIR') from dual;
+
+FILE_PKG.GET_FILE('/HOME/ORACLE/EXTTAB-FILES/TEST.TXT').GET_BFILE('OTHER_DIR')
+--------------------------------------------------------------------------------
+bfilename('OTHER_DIR', 'test.txt')
+
+1 Zeile wurde ausgewählt.
+
+SQL&gt; select file_pkg.get_file('/home/oracle/exttab-files/subdir').get_bfile('OTHER_DIR') from dual;
+select file_pkg.get_file('/home/oracle/exttab-files/subdir').get_bfile() from dual
+
+ERROR at line 1:
+ORA-20000: CANNOT CONVERT DIRECTORY INTO BFILE
+ORA-06512: at "SYS.FILE_TYPE", line 9
+ORA-06512: at line 1
+</pre>
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_directory_name" TYPE="varchar2">
+<COMMENT><![CDATA[Name of a directory object to create the BFILE - if given, the function will not try to find one.]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="bfile">
+<COMMENT><![CDATA[a BFILE representing this file]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_directory_name Name of a directory object to create the BFILE - if given, the function will not try to find one.]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[a BFILE representing this file]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="get_directory">
+<COMMENT_FIRST_LINE><![CDATA[Looks up a directory object which represents either, if the file handle is a directory, the handle itself, or
+the folder in which the file handle resides in.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Looks up a directory object which represents either, if the file handle is a directory, the handle itself, or
+the folder in which the file handle resides in. If no or multiple matching directory objects are found, an
+exception is thrown.
+]]></COMMENT>
+<RETURN TYPE="varchar2">
+<COMMENT><![CDATA[The name of the matching directory object]]></COMMENT>
+</RETURN>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[The name of the matching directory object]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="get_free_space">
+<COMMENT_FIRST_LINE><![CDATA[returns the space (in bytes), which is available on the device containing this file handle.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[returns the space (in bytes), which is available on the device containing this file handle. Only
+available on <b>Oracle 12.1</b> or higher.
+]]></COMMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[free space on the device in bytes]]></COMMENT>
+</RETURN>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[free space on the device in bytes]]></COMMENT>
+</TAG>
+</FUNCTION>
+</PACKAGE>
+<PACKAGE NAME="file_pkg" SCHEMA="">
+<COMMENT><![CDATA[<b>FILE_PKG</b> is a helper package for obtaining file handles. A file handle can either
+be obtained as a single handle or as a virtual table of file handles using the table functions
+]]></COMMENT>
+<FUNCTION NAME="get_file">
+<COMMENT_FIRST_LINE><![CDATA[gets a simple file handle.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[gets a simple file handle. A handle is always being returned, even if the file does not exist.
+<pre>
+SQL&gt; select file_pkg.get_file('/home/oracle/nonexisting_file.txt') file_handle from duaL;
+
+FILE_HANDLE
+----------------------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/nonexisting_file.txt', NULL, NULL, NULL, NULL, NULL, NULL, <b>'N'</b>)
+
+SQL&gt; select file_pkg.get_file('/home/oracle/existing_file.txt') file_handle from dual;
+
+FILE_EXISTS
+---------------------------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/existing_file.txt', 'existing_file.txt', 0, '03.02.10', 'N', 'Y', 'Y', 'Y')
+</pre>
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_file_path" TYPE="varchar2">
+<COMMENT><![CDATA[the absolute path to the file]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="file_type">
+<COMMENT><![CDATA[the file handle]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_file_path the absolute path to the file]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the file handle]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="get_file_list">
+<COMMENT_FIRST_LINE><![CDATA[gets all file handles in a directory (directory listing) as a virtual table.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[gets all file handles in a directory (directory listing) as a virtual table.
+This function is used best in a SQL SELECT statement<br>
+<pre>select * from table(file_pkg.get_file_list(file_pkg.get_file('/')))</pre>
+This function allows operations on multiple files within a single SQL SELECT command. The following
+SQL gets the content of all files in a directory as a BLOB:<br>
+<pre>select value(e).get_content_as_blob() from table(file_pkg.get_file_list(file_pkg.get_file('/'))) e</pre>
+<br/>
+<b>Note:</b> This function prepares the full table in memory before returning - use the new
+<tt>GET_FILE_LIST_P</tt> function for optimized memory usage and better performance.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_directory" TYPE="file_type">
+<COMMENT><![CDATA[Directory from which the file handles to be obtained]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="file_list_type">
+<COMMENT><![CDATA[Table of file handles]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_directory Directory from which the file handles to be obtained]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[Table of file handles]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="get_recursive_file_list">
+<COMMENT_FIRST_LINE><![CDATA[gets all file handles in a directory and recursively in all subdirectories (directory listing) as a virtual table.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[gets all file handles in a directory and recursively in all subdirectories (directory listing) as a virtual table.
+This function is used best in a SQL SELECT statement<br>
+<pre>select * from table(file_pkg.get_file_list(file_pkg.get_file('/')))</pre>
+This function allows operations on multiple files within a single SQL SELECT command. The following
+SQL gets the content of all files in a directory as a BLOB:<br>
+<pre>select value(e).get_content_as_blob() from table(file_pkg.get_recursive_file_list(file_pkg.get_file('/'))) e</pre>
+<br/>
+<b>Note:</b> This function prepares the full table in memory before returning - use the new
+<tt>GET_RECURSIVE_FILE_LIST_P</tt> function for optimized memory usage and better performance.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_directory" TYPE="file_type">
+<COMMENT><![CDATA[Directory from which the file handles to be obtained]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="file_list_type">
+<COMMENT><![CDATA[Table of file handles]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_directory Directory from which the file handles to be obtained]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[Table of file handles]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="get_path_separator">
+<COMMENT_FIRST_LINE><![CDATA[returns the operating system-specific path separator character; "/" on Unix, "\" on Windows.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[returns the operating system-specific path separator character; "/" on Unix, "\" on Windows. Can be used
+to determine the operating system the Oracle instance is running on.
+]]></COMMENT>
+<RETURN TYPE="varchar2">
+<COMMENT><![CDATA[the path separator char]]></COMMENT>
+</RETURN>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the path separator char]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="get_root_directories">
+<COMMENT_FIRST_LINE><![CDATA[gets file handles for all root directories (one for each drive letter on windows platforms) as a virtual table.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[gets file handles for all root directories (one for each drive letter on windows platforms) as a virtual table.
+]]></COMMENT>
+<RETURN TYPE="file_list_type">
+<COMMENT><![CDATA[Table of file handles]]></COMMENT>
+</RETURN>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[Table of file handles]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="get_root_directory">
+<COMMENT_FIRST_LINE><![CDATA[returns file handle for the root directory (the first drive letter on windows platforms).]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[returns file handle for the root directory (the first drive letter on windows platforms).
+<pre>
+SQL&gt; select file_pkg.get_root_directory() ROOT from dual;
+
+ROOT
+--------------------------------------------------------------------------------
+FILE_TYPE('/', '', 4096, '22.01.10', 'Y', 'N', 'Y', 'Y')
+</pre>
+]]></COMMENT>
+<RETURN TYPE="file_type">
+<COMMENT><![CDATA[file handle]]></COMMENT>
+</RETURN>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[file handle]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="get_recursive_file_list_p">
+<COMMENT_FIRST_LINE><![CDATA[gets all file handles in a directory and recursively in all subdirectories (directory listing) as a virtual table.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[gets all file handles in a directory and recursively in all subdirectories (directory listing) as a virtual table.
+This function is used best in a SQL SELECT statement<br>
+<pre>select * from table(file_pkg.get_file_list(file_pkg.get_file('/')))</pre>
+This function allows operations on multiple files within a single SQL SELECT command. The following
+SQL gets the content of all files in a directory as a BLOB:<br>
+<pre>select value(e).get_content_as_blob() from table(file_pkg.get_recursive_file_list(file_pkg.get_file('/'))) e</pre>
+<br/>
+<b>Note:</b> This new function returns the directory listing <i>pipelined</i>, which leads
+to optimized memory usage and better performance. Use this function instead of the "old" <tt>GET_RECURSIVE_FILE_LIST</tt>
+function.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_directory" TYPE="file_type">
+<COMMENT><![CDATA[Directory from which the file handles to be obtained]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="file_list_type">
+<COMMENT><![CDATA[Table of file handles]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_directory Directory from which the file handles to be obtained]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.9]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[Table of file handles]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="get_file_list_p">
+<COMMENT_FIRST_LINE><![CDATA[gets all file handles in a directory (directory listing) as a virtual table.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[gets all file handles in a directory (directory listing) as a virtual table.
+This function is used best in a SQL SELECT statement<br>
+<pre>select * from table(file_pkg.get_file_list(file_pkg.get_file('/')))</pre>
+This function allows operations on multiple files within a single SQL SELECT command. The following
+SQL gets the content of all files in a directory as a BLOB:<br>
+<pre>select value(e).get_content_as_blob() from table(file_pkg.get_file_list(file_pkg.get_file('/'))) e</pre>
+<br/>
+<b>Note:</b> This new function returns the directory listing <i>pipelined</i>, which leads
+to optimized memory usage and better performance. Use this function instead of the "old" <tt>GET_FILE_LIST</tt>
+function.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_directory" TYPE="file_type">
+<COMMENT><![CDATA[Directory from which the file handles to be obtained]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="file_list_type">
+<COMMENT><![CDATA[Table of file handles]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_directory Directory from which the file handles to be obtained]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.9]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[Table of file handles]]></COMMENT>
+</TAG>
+</FUNCTION>
+<PROCEDURE NAME="set_fs_encoding">
+<COMMENT_FIRST_LINE><![CDATA[sets the encoding to use for file names.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[sets the encoding to use for file names. This procedure is important when the
+database encoding does <b>not</b> match the filesystem encoding and filenames
+contain non-ASCII characters. In a Unicode database on a windows system
+with "windows-1252" filesystem encoding the procedure is being used as follows:
+<pre>file_pkg.set_fs_encoding('windows-1252');</pre>
+On a 10g database this call <b>must</b> be executed before the very first
+file system access.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_fs_encoding" TYPE="varchar2">
+<COMMENT><![CDATA[The encoding to use for filesystem access; e.g. windows-1252, iso-8859-1, utf-8]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_reset_session" TYPE="boolean">
+<COMMENT><![CDATA[<b>11g and higher</b>: Reset java session before (default is <b>true</b>).]]></COMMENT>
+</ARGUMENT>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_fs_encoding The encoding to use for filesystem access; e.g. windows-1252, iso-8859-1, utf-8]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_reset_session <b>11g and higher</b>: Reset java session before (default is <b>true</b>).]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.9.3]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<FUNCTION NAME="get_fs_encoding">
+<COMMENT_FIRST_LINE><![CDATA[gets the current file system encoding
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[gets the current file system encoding
+]]></COMMENT>
+<RETURN TYPE="varchar2">
+<COMMENT><![CDATA[the current file system encoding]]></COMMENT>
+</RETURN>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the current file system encoding]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="get_file">
+<COMMENT_FIRST_LINE><![CDATA[gets a simple file handle by directory object and file name.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[gets a simple file handle by directory object and file name. The directory object must
+exist and be accessible for the current user (ALL_DIRECTORIES). If an invalid directory
+object is given, the function throws an exception. If the filename is NULL, the
+returned file handle represents the directory object itself.
+<pre>
+SQL&gt; select file_pkg.get_file('HOMEDIR', 'existing_file.txt') file_handle from dual;
+
+FILE_HANDLE
+---------------------------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/existing_file.txt', 'existing_file.txt', 0, '03.02.10', 'N', 'Y', 'Y', 'Y')
+</pre>
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_directory" TYPE="varchar2">
+<COMMENT><![CDATA[the name of the directory object]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_filename" TYPE="varchar2">
+<COMMENT><![CDATA[the file name]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="file_type">
+<COMMENT><![CDATA[the file handle]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_directory the name of the directory object]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_filename the file name]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the file handle]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="get_file">
+<COMMENT_FIRST_LINE><![CDATA[gets a simple file handle by BFILE.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[gets a simple file handle by BFILE. The directory object within the BFILE must
+exist and be accessible for the current user (ALL_DIRECTORIES). If the BFILE contains an invalid directory
+object, the function throws an exception.
+<pre>
+SQL&gt; select file_pkg.get_file(bfilename('HOMEDIR', 'existing_file.txt')) file_handle from dual;
+
+FILE_HANDLE
+---------------------------------------------------------------------------------------------------
+FILE_TYPE('/home/oracle/existing_file.txt', 'existing_file.txt', 0, '03.02.10', 'N', 'Y', 'Y', 'Y')
+</pre>
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_bfile" TYPE="bfile">
+<COMMENT><![CDATA[the bfile object]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="file_type">
+<COMMENT><![CDATA[the file handle]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_bfile the bfile object]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the file handle]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="get_file_list">
+<COMMENT_FIRST_LINE><![CDATA[gets all file handles in a directory (directory listing) as a virtual table.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[gets all file handles in a directory (directory listing) as a virtual table. This function
+expects the name of an existing directory object as VARCHAR2. If the given directory object
+does not exist or is not accessible, an exception is thrown.  The function is used best
+in a SQL SELECT statement<br>
+<pre>select * from table(file_pkg.get_file_list('HOMEDIR'))</pre>
+This function allows operations on multiple files within a single SQL SELECT command. The following
+SQL gets the content of all files in a directory as a BLOB:<br>
+<pre>select value(e).get_content_as_blob() from table(file_pkg.get_file_list('HOMEDIR')) e</pre>
+<br/>
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_directory_name" TYPE="varchar2">
+<COMMENT><![CDATA[name of an existing directory object to be listed]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="file_list_type">
+<COMMENT><![CDATA[Table of file handles]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_directory_name name of an existing directory object to be listed]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[Table of file handles]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="get_file_list_p">
+<COMMENT_FIRST_LINE><![CDATA[gets all file handles in a directory (directory listing) as a virtual table.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[gets all file handles in a directory (directory listing) as a virtual table. This function
+expects the name of an existing directory object as VARCHAR2. If the given directory object
+does not exist or is not accessible, an exception is thrown.  The function is used best
+in a SQL SELECT statement<br>
+<pre>select * from table(file_pkg.get_file_list('HOMEDIR'))</pre>
+This function allows operations on multiple files within a single SQL SELECT command. The following
+SQL gets the content of all files in a directory as a BLOB:<br>
+<pre>select value(e).get_content_as_blob() from table(file_pkg.get_file_list('HOMEDIR')) e</pre>
+<br/>
+<b>Note:</b> This new function returns the directory listing <i>pipelined</i>, which leads
+to optimized memory usage and better performance. Use this function instead of the "old" <tt>GET_FILE_LIST</tt>
+function.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_directory_name" TYPE="varchar2">
+<COMMENT><![CDATA[name of an existing directory object to be listed]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="file_list_type">
+<COMMENT><![CDATA[Table of file handles]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_directory_name name of an existing directory object to be listed]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[Table of file handles]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="remove_multiple_separators">
+<COMMENT_FIRST_LINE><![CDATA[This function "normalizes" a file path by removing trailing slashes and multiple
+slashes within the path.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[This function "normalizes" a file path by removing trailing slashes and multiple
+slashes within the path. Useful to compare file paths.
+<pre>
+select file_pkg.remove_multiple_separators('/path//to///a/file/') as NORMALIZED_PATH from dual;
+
+NORMALIZED_PATH
+-------------------------
+/pah/to/a/file
+</pre>
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_path" TYPE="varchar2">
+<COMMENT><![CDATA[filesystem path to normalize]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="varchar2">
+<COMMENT><![CDATA[the normalized path]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_path filesystem path to normalize]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the normalized path]]></COMMENT>
+</TAG>
+</FUNCTION>
+</PACKAGE>
+<PACKAGE NAME="os_command" SCHEMA="">
+<COMMENT><![CDATA[<P> The OS_COMMAND package contains various functions for executing shell commands from the SQL engine.
+The different functions handle STDIN and STDOUT differently. As for the FILE_TYPE object type the
+database user needs appropriate privileges in order to execute the shell commands and to access
+STDIN and STDOUT. See the function documentation for details.<br/>
+<br/>
+The following script grants read and write permissions on STDIN and STDOUT and execute
+privileges for a specific shell command:
+<pre>
+
+begin
+-- this grants read privilege on STDIN
+dbms_java.grant_permission(
+grantee =&gt;           'SCOTT',
+permission_type =&gt;   'SYS:java.lang.RuntimePermission',
+permission_name =&gt;   'readFileDescriptor',
+permission_action =&gt; null
+);
+-- this grants write permission on STDOUT
+dbms_java.grant_permission(
+grantee =&gt;           'SCOTT',
+permission_type =&gt;   'SYS:java.lang.RuntimePermission',
+permission_name =&gt;   'writeFileDescriptor',
+permission_action =&gt; null
+);
+-- this grants execute privilege for the 'ls -la' command
+dbms_java.grant_permission(
+grantee =&gt;           'SCOTT',
+permission_type =&gt;   'SYS:java.io.FilePermission',
+permission_name =&gt;   '/bin/ls',
+permission_action =&gt; 'execute'
+);
+-- this grants execute privilege for ALL shell commands: VERY DANGEROUS!
+dbms_java.grant_permission(
+grantee =&gt;           'SCOTT',
+permission_type =&gt;   'SYS:java.io.FilePermission',
+permission_name =&gt;   '&lt;&lt;ALL FILES&gt;&gt;',
+permission_action =&gt; 'execute'
+);
+end;
+
+</pre>
+Usage examples:
+<ul>
+<li>
+SELECT'ing a directory listing ...
+<pre>
+SQL&gt; select os_command.exec_clob('ls -la /') directory_listing from dual;
+<br/>
+DIRECTORY_LISTING
+--------------------------------------------------------------------------------
+total 246
+drwxr-xr-x  25 root root  4096 Jan 21 09:15 .
+drwxr-xr-x  25 root root  4096 Jan 21 09:15 ..
+-rw-r--r--   1 root root     0 Jan 21 08:56 .autofsck
+-rw-r--r--   1 root root     0 Jan 17 17:11 .autorelabel
+drwxr-xr-x   2 root root  4096 Feb  6 15:03 bin
+drwxr-xr-x   4 root root  1024 Jan 17 18:18 boot
+drwxr-xr-x  11 root root  3900 Feb 14 09:40 dev
+</pre>
+</li><li>
+Executing the same directory listing but also gathering the return code:
+<pre>
+set serveroutput on
+declare
+v_stdout clob;
+v_return number;
+begin
+dbms_lob.createtemporary(v_stdout, true, DBMS_LOB.CALL);
+v_return := os_command.exec(p_command => 'ls -la /', p_stdout => v_stdout);
+dbms_output.put_line('Return code: '||v_return);
+dbms_output.put_line('LOB-Content: ');
+dbms_output.put_line('*************');
+dbms_output.put_line(v_stdout);
+dbms_lob.freetemporary(v_stdout);
+end;
+/
+Return code: 0
+LOB-Content:
+***********
+total 246
+drwxr-xr-x  25 root root  4096 Jan 21 09:15 .
+drwxr-xr-x  25 root root  4096 Jan 21 09:15 ..
+-rw-r--r--   1 root root     0 Jan 21 08:56 .autofsck
+-rw-r--r--   1 root root     0 Jan 17 17:11
+</pre>
+</li></ul>
+</P>
+]]></COMMENT>
+<PROCEDURE NAME="set_working_dir">
+<COMMENT_FIRST_LINE><![CDATA[sets the working directory for the "exec" calls.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[sets the working directory for the "exec" calls. If no working directory is set, the working directory of the "oracle" process is being used.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_workdir" TYPE="file_type">
+<COMMENT><![CDATA[the working directory to use as FILE_TYPE.]]></COMMENT>
+</ARGUMENT>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_workdir the working directory to use as FILE_TYPE.]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.6]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<PROCEDURE NAME="clear_working_dir">
+<COMMENT_FIRST_LINE><![CDATA[clears the working directory for the "exec" calls.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[clears the working directory for the "exec" calls. Now the working directory of the "oracle" process is being used.
+]]></COMMENT>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.6]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<FUNCTION NAME="get_working_dir">
+<COMMENT_FIRST_LINE><![CDATA[gets the current working directory setting; NULL if no working directory was set.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[gets the current working directory setting; NULL if no working directory was set.
+]]></COMMENT>
+<RETURN TYPE="FILE_TYPE">
+<COMMENT><![CDATA[the working directory which was set with the last call to <b>set_working_dir</b>; NULL of no directory was set.]]></COMMENT>
+</RETURN>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.6]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the working directory which was set with the last call to <b>set_working_dir</b>; NULL of no directory was set.]]></COMMENT>
+</TAG>
+</FUNCTION>
+<PROCEDURE NAME="clear_environment">
+<COMMENT_FIRST_LINE><![CDATA[removes all environment variables from the "custom environment".]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[removes all environment variables from the "custom environment".
+See <b>use_custom_env</b> for more information about the custom environment.
+]]></COMMENT>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.6]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<PROCEDURE NAME="set_env_var">
+<COMMENT_FIRST_LINE><![CDATA[sets an environment variable in the custom environment.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[sets an environment variable in the custom environment. An existing entry with the given variable name is being overwritten.
+See <b>use_custom_env</b> for more information about the custom environment.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_env_name" TYPE="varchar2">
+<COMMENT><![CDATA[the name of the environment variable.]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_env_value" TYPE="varchar2">
+<COMMENT><![CDATA[the value for this environment variable.]]></COMMENT>
+</ARGUMENT>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_env_name the name of the environment variable.]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_env_value the value for this environment variable.]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.6]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<PROCEDURE NAME="remove_env_var">
+<COMMENT_FIRST_LINE><![CDATA[removes an environment variable from the custom environment.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[removes an environment variable from the custom environment.
+See <b>use_custom_env</b> for more information about the custom environment.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_env_name" TYPE="varchar2">
+<COMMENT><![CDATA[the name of the environment variable.]]></COMMENT>
+</ARGUMENT>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_env_name the name of the environment variable.]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.6]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<FUNCTION NAME="get_env_var">
+<COMMENT_FIRST_LINE><![CDATA[gets the value of the specified environment variable from the custom environment.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[gets the value of the specified environment variable from the custom environment.
+See <b>use_custom_env</b> for more information about the custom environment.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_env_name" TYPE="varchar2">
+<COMMENT><![CDATA[the name of the environment variable.]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="varchar2">
+<COMMENT><![CDATA[the value for this environment variable.]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_env_name the name of the environment variable.]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.6]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the value for this environment variable.]]></COMMENT>
+</TAG>
+</FUNCTION>
+<PROCEDURE NAME="load_env">
+<COMMENT_FIRST_LINE><![CDATA[copies the default environment (in which the "oracle" process runs) into the custom environment.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[copies the default environment (in which the "oracle" process runs) into the custom environment. A
+<b>java.lang.RuntimePermission</b> (<code>getenv.*</code>) is needed in order to execute this.<br><br>
+<b>This is available in 11g oder higher</b>
+]]></COMMENT>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.6]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<PROCEDURE NAME="load_env">
+<COMMENT_FIRST_LINE><![CDATA[copies the specified environment variable from the default environment (in which the "oracle" process runs) into the custom environment.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[copies the specified environment variable from the default environment (in which the "oracle" process runs) into the custom environment. <br><br>
+<b>This is available in 11g oder higher</b>
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_env_name" TYPE="varchar2">
+<COMMENT><![CDATA[the name of the environment variable to copy.]]></COMMENT>
+</ARGUMENT>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_env_name the name of the environment variable to copy.]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.6]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<PROCEDURE NAME="use_custom_env">
+<COMMENT_FIRST_LINE><![CDATA[Use "custom" environment variables defined by this package for the "exec" calls.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Use "custom" environment variables defined by this package for the "exec" calls. Operating
+system commands can be executed with the "custom" or "default" environment. The "default"
+environment is the environment of the Oracle processes - the "custom" environment can be
+set using the <b>set_env_var</b>, <b>get_env_var</b> or <b>remove_env_var</b> calls.<br/>
+The <b>use_custom_env</b> and <b>use_default_env</b> calls allow to switch between the
+default and the custom environment.
+]]></COMMENT>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.6]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<PROCEDURE NAME="use_default_env">
+<COMMENT_FIRST_LINE><![CDATA[Use "default" environment variables defined by this package for the "exec" calls.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Use "default" environment variables defined by this package for the "exec" calls. Operating
+system commands can be executed with the "custom" or "default" environment. The "default"
+environment is the environment of the Oracle processes - the "custom" environment can be
+set using the <b>set_env_var</b>, <b>get_env_var</b> or <b>remove_env_var</b> calls.<br/>
+The <b>use_custom_env</b> and <b>use_default_env</b> calls allow to switch between the
+default and the custom environment.
+]]></COMMENT>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.6]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<PROCEDURE NAME="set_Shell">
+<COMMENT_FIRST_LINE><![CDATA[sets the path and "command switch" for the shell to use if <b>set_exec_in_shell</b>
+was called.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[sets the path and "command switch" for the shell to use if <b>set_exec_in_shell</b>
+was called. A typical call on Unix is:
+<pre>
+OS_COMMAND.SET_SHELL('/bin/sh', '-c');
+</pre>
+On Windows:
+<pre>
+OS_COMMAND.SET_SHELL('C:\WINDOWS\SYSTEM32\CMD.EXE', '/C');
+</pre>
+These are also the default settings.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_shell_path" TYPE="varchar2">
+<COMMENT><![CDATA[path to the shell executable e.g. "/bin/sh"]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_shell_switch" TYPE="varchar2">
+<COMMENT><![CDATA[shell executable switch to execute a command e.g. "-c"]]></COMMENT>
+</ARGUMENT>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_shell_path path to the shell executable e.g. "/bin/sh"]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_shell_switch shell executable switch to execute a command e.g. "-c"]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.9]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<FUNCTION NAME="get_shell">
+<COMMENT_FIRST_LINE><![CDATA[returns the operating system call for the current shell.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[returns the operating system call for the current shell. This shell is being used for the <b>exec</b>
+calls.
+<pre>
+select OS_COMMAND.GET_SHELL shell from dual;
+
+SHELL
+------
+/bin/sh -c
+</pre>
+]]></COMMENT>
+<RETURN TYPE="varchar2">
+<COMMENT><![CDATA[the current shell and "execute command switch"]]></COMMENT>
+</RETURN>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.9]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the current shell and "execute command switch"]]></COMMENT>
+</TAG>
+</FUNCTION>
+<PROCEDURE NAME="set_exec_in_shell">
+<COMMENT_FIRST_LINE><![CDATA[Execute operating system commands (<b>exec</b> procedures and functions) in a shell.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Execute operating system commands (<b>exec</b> procedures and functions) in a shell. The
+shell defaults <b>/bin/sh -c</b> on Unix and to <b>C:\WINDOWS\SYSTEM32\CMD.EXE /C</b> on
+Linux. The <b>set_shell</b> procedure allows to change the shell. <br/>
+Use this to execute e.g. complex Unix shell commands:
+<pre>
+begin
+OS_COMMAND.SET_EXEC_IN_SHELL;
+end;
+/
+
+select os_command.exec_clob('/bin/ls -la /usr/lib | /usr/bin/grep .so | /usr/bin/wc -l') complex_command from dual;
+
+COMPLEX_COMMAND
+---------------
+345
+</pre>
+]]></COMMENT>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.9]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<PROCEDURE NAME="set_exec_direct">
+<COMMENT_FIRST_LINE><![CDATA[Execute operating system commands (<b>exec</b> procedures and functions) directly.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Execute operating system commands (<b>exec</b> procedures and functions) directly. Note
+that complex shell commands will result in an error. Try <b>set_exec_in_shell</b> in
+those cases.
+<pre>
+begin
+OS_COMMAND.SET_EXEC_DIRECT;
+end;
+/
+select os_command.exec_clob('/bin/ls -la /usr/lib | /usr/bin/grep .so | /usr/bin/wc -l') complex_command from dual;
+COMPLEX_COMMAND
+---------------------------------------------------------------
+Error during creation of the process
+
+begin
+OS_COMMAND.SET_EXEC_IN_SHELL;
+end;
+/
+select os_command.exec_clob('/bin/ls -la /usr/lib | /usr/bin/grep .so | /usr/bin/wc -l') complex_command from dual;
+COMPLEX_COMMAND
+---------------
+345
+</pre>
+]]></COMMENT>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.9]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<FUNCTION NAME="exec_CLOB">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdin" TYPE="blob">
+<COMMENT><![CDATA[binary content (BLOB) to be passed to STDIN]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="clob">
+<COMMENT><![CDATA[content written by the shell command to STDOUT as CLOB]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdin binary content (BLOB) to be passed to STDIN]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.1]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[content written by the shell command to STDOUT as CLOB]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec_CLOB">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdin" TYPE="clob">
+<COMMENT><![CDATA[character content (CLOB) to be passed to STDIN]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="clob">
+<COMMENT><![CDATA[content written by the shell command to STDOUT as CLOB]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdin character content (CLOB) to be passed to STDIN]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.1]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[content written by the shell command to STDOUT as CLOB]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec_BLOB">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdin" TYPE="blob">
+<COMMENT><![CDATA[binary content (BLOB) to be passed to STDIN]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="blob">
+<COMMENT><![CDATA[content written by the shell command to STDOUT as BLOB]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdin binary content (BLOB) to be passed to STDIN]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.1]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[content written by the shell command to STDOUT as BLOB]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec_BLOB">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdin" TYPE="clob">
+<COMMENT><![CDATA[character content (CLOB) to be passed to STDIN]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="blob">
+<COMMENT><![CDATA[content written by the shell command to STDOUT as BLOB]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdin character content (CLOB) to be passed to STDIN]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.1]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[content written by the shell command to STDOUT as BLOB]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec_CLOB">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="clob">
+<COMMENT><![CDATA[content written by the shell command to STDOUT as CLOB]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.1]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[content written by the shell command to STDOUT as CLOB]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec_BLOB">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="blob">
+<COMMENT><![CDATA[content written by the shell command to STDOUT as BLOB]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.1]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[content written by the shell command to STDOUT as BLOB]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdin" TYPE="blob">
+<COMMENT><![CDATA[binary content (BLOB) to be passed to STDIN]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdin binary content (BLOB) to be passed to STDIN]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.1]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdin" TYPE="clob">
+<COMMENT><![CDATA[character content (CLOB) to be passed to STDIN]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdin character content (CLOB) to be passed to STDIN]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.1]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.1]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdin" TYPE="clob">
+<COMMENT><![CDATA[character content (CLOB) to be passed to STDIN]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdout" TYPE="clob">
+<COMMENT><![CDATA[OUT Parameter: content written by the shell command to STDOUT as CLOB. This must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdin character content (CLOB) to be passed to STDIN]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdout OUT Parameter: content written by the shell command to STDOUT as CLOB. This must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.1]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdin" TYPE="clob">
+<COMMENT><![CDATA[character content (CLOB) to be passed to STDIN]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdout" TYPE="blob">
+<COMMENT><![CDATA[OUT Parameter: content written by the shell command to STDOUT as BLOB. This must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdin character content (CLOB) to be passed to STDIN]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdout OUT Parameter: content written by the shell command to STDOUT as BLOB. This must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.1]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdin" TYPE="blob">
+<COMMENT><![CDATA[binary content (BLOB) to be passed to STDIN]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdout" TYPE="blob">
+<COMMENT><![CDATA[OUT Parameter: content written by the shell command to STDOUT as BLOB. This must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdin binary content (BLOB) to be passed to STDIN]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdout OUT Parameter: content written by the shell command to STDOUT as BLOB. This must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.1]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdin" TYPE="blob">
+<COMMENT><![CDATA[binary content (BLOB) to be passed to STDIN]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdout" TYPE="clob">
+<COMMENT><![CDATA[OUT Parameter: content written by the shell command to STDOUT as CLOB. This must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdin binary content (BLOB) to be passed to STDIN]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdout OUT Parameter: content written by the shell command to STDOUT as CLOB. This must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.1]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdout" TYPE="clob">
+<COMMENT><![CDATA[OUT Parameter: content written by the shell command to STDOUT as CLOB. This must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdout OUT Parameter: content written by the shell command to STDOUT as CLOB. This must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.1]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdout" TYPE="blob">
+<COMMENT><![CDATA[OUT Parameter: content written by the shell command to STDOUT as BLOB. This must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdout OUT Parameter: content written by the shell command to STDOUT as BLOB. This must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[0.1]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdin" TYPE="clob">
+<COMMENT><![CDATA[content to be passed to STDIN]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdout" TYPE="clob">
+<COMMENT><![CDATA[CLOB to store STDOUT output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stderr" TYPE="clob">
+<COMMENT><![CDATA[CLOB to store STDERR output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdin   content to be passed to STDIN]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdout  CLOB to store STDOUT output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stderr  CLOB to store STDERR output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[1.0]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdin" TYPE="clob">
+<COMMENT><![CDATA[content to be passed to STDIN]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdout" TYPE="blob">
+<COMMENT><![CDATA[BLOB to store STDOUT output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stderr" TYPE="blob">
+<COMMENT><![CDATA[BLOB to store STDERR output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdin   content to be passed to STDIN]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdout  BLOB to store STDOUT output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stderr  BLOB to store STDERR output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[1.0]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdin" TYPE="blob">
+<COMMENT><![CDATA[content to be passed to STDIN]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdout" TYPE="blob">
+<COMMENT><![CDATA[BLOB to store STDOUT output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stderr" TYPE="blob">
+<COMMENT><![CDATA[BLOB to store STDERR output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdin   content to be passed to STDIN]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdout  BLOB to store STDOUT output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stderr  BLOB to store STDERR output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[1.0]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdin" TYPE="blob">
+<COMMENT><![CDATA[content to be passed to STDIN]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdout" TYPE="clob">
+<COMMENT><![CDATA[CLOB to store STDOUT output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stderr" TYPE="clob">
+<COMMENT><![CDATA[CLOB to store STDERR output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdin   content to be passed to STDIN]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdout  CLOB to store STDOUT output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stderr  CLOB to store STDERR output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[1.0]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdout" TYPE="clob">
+<COMMENT><![CDATA[CLOB to store STDOUT output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stderr" TYPE="clob">
+<COMMENT><![CDATA[CLOB to store STDERR output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdout  CLOB to store STDOUT output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stderr  CLOB to store STDERR output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[1.0]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</TAG>
+</FUNCTION>
+<FUNCTION NAME="exec">
+<COMMENT_FIRST_LINE><![CDATA[executes a shell command
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[executes a shell command
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_command" TYPE="varchar2">
+<COMMENT><![CDATA[the command string to execute]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stdout" TYPE="blob">
+<COMMENT><![CDATA[BLOB to store STDOUT output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_stderr" TYPE="blob">
+<COMMENT><![CDATA[BLOB to store STDERR output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="number">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_command the command string to execute]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stdout  BLOB to store STDOUT output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_stderr  BLOB to store STDERR output in - must be a valid LOB locator (persistent or temporary LOB)]]></COMMENT>
+</TAG>
+<TAG TYPE="@since">
+<COMMENT><![CDATA[1.0]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[the operating system return code (0 for success)]]></COMMENT>
+</TAG>
+</FUNCTION>
+</PACKAGE>
+<PACKAGE NAME="lob_writer_plsql" SCHEMA="">
+<COMMENT><![CDATA[<b><i style="color:red">Note that the package LOB_WRITER_PLSQL is deprecated. It will stay within this package "as-is", but there will be no further development on it.</i></b>
+<hr>
+The package LOB_WRITER_PLSQL is a helper package for writing LOB content (BLOB, CLOB) to a file. This could also be achieved using the FILE_TYPE object type or the OS_COMMAND package but this package deals with pure PL/SQL without utilizing java in the database.
+Use this package if you don't want to grant special java privileges and you want to use "traditional" Oracle directory objects and the UTL_FILE package.
+]]></COMMENT>
+<PROCEDURE NAME="write_clob">
+<COMMENT_FIRST_LINE><![CDATA[writes a CLOB to a file
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[writes a CLOB to a file
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_directory" TYPE="varchar2">
+<COMMENT><![CDATA[Name of the Oracle Directory object (see dictionary view ALL_DIRECTORIES)]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_filename" TYPE="varchar2">
+<COMMENT><![CDATA[Name of the file to be written]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_data" TYPE="clob">
+<COMMENT><![CDATA[CLOB content to be written]]></COMMENT>
+</ARGUMENT>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_directory Name of the Oracle Directory object (see dictionary view ALL_DIRECTORIES)]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_filename Name of the file to be written]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_data  CLOB content to be written]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<PROCEDURE NAME="write_blob">
+<COMMENT_FIRST_LINE><![CDATA[writes a BLOB to a file
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[writes a BLOB to a file
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_directory" TYPE="varchar2">
+<COMMENT><![CDATA[Name of the Oracle Directory object (see dictionary view ALL_DIRECTORIES)]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_filename" TYPE="varchar2">
+<COMMENT><![CDATA[Name of the file to be written]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_data" TYPE="blob">
+<COMMENT><![CDATA[BLOB content to be written]]></COMMENT>
+</ARGUMENT>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_directory Name of the Oracle Directory object (see dictionary view ALL_DIRECTORIES)]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_filename Name of the file to be written]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_data  BLOB content to be written]]></COMMENT>
+</TAG>
+</PROCEDURE>
+</PACKAGE>
+<PACKAGE NAME="file_security" SCHEMA="">
+<COMMENT><![CDATA[Helper package for granting java file permissions. Can be used instead of
+DBMS_JAVA calls.
+]]></COMMENT>
+<CONSTANT NAME="READ">
+<COMMENT_FIRST_LINE><![CDATA[READ permission for a filesystem resource (file or folder)
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[READ permission for a filesystem resource (file or folder)
+]]></COMMENT>
+<RETURN TYPE="pls_integer"/>
+</CONSTANT>
+<CONSTANT NAME="WRITE">
+<COMMENT_FIRST_LINE><![CDATA[WRITE permission for a filesystem resource (file or folder)
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[WRITE permission for a filesystem resource (file or folder)
+]]></COMMENT>
+<RETURN TYPE="pls_integer"/>
+</CONSTANT>
+<CONSTANT NAME="EXEC">
+<COMMENT_FIRST_LINE><![CDATA[EXECUTE permission for a filesystem resource (file or folder)
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[EXECUTE permission for a filesystem resource (file or folder)
+]]></COMMENT>
+<RETURN TYPE="pls_integer"/>
+</CONSTANT>
+<PROCEDURE NAME="grant_permission">
+<COMMENT_FIRST_LINE><![CDATA[Grants permissions on a file.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[Grants permissions on a file.
+<pre>
+file_security.grant_permission(
+p_file_path  => '/home/oracle/*,
+p_grantee    => 'SCOTT',
+p_permission => FILE_SECURITY.READ + FILE_SECURITY.WRITE
+);
+</pre>
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_file_path" TYPE="varchar2">
+<COMMENT><![CDATA[absolute path to the filesystem resource (file or folder). A star includes
+all files in a folder without the subfolders - a dash (-) includes all
+files in the folder and all subfolders recursively.]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_grantee" TYPE="varchar2">
+<COMMENT><![CDATA[database user to which to grant the privileges]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_permission" TYPE="pls_integer">
+<COMMENT><![CDATA[permissions to grant - use the package constants READ, WRITE and EXECUTE]]></COMMENT>
+</ARGUMENT>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_file_path  absolute path to the filesystem resource (file or folder). A star includes
+all files in a folder without the subfolders - a dash (-) includes all
+files in the folder and all subfolders recursively.]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_grantee    database user to which to grant the privileges]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_permission permissions to grant - use the package constants READ, WRITE and EXECUTE]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<PROCEDURE NAME="revoke_permission">
+<COMMENT_FIRST_LINE><![CDATA[revokes permissions on a file.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[revokes permissions on a file.
+<pre>
+file_security.revoke_permission(
+p_file_path  => '/home/oracle/*,
+p_grantee    => 'SCOTT',
+p_permission => FILE_SECURITY.READ + FILE_SECURITY.WRITE
+);
+</pre>
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_file_path" TYPE="varchar2">
+<COMMENT><![CDATA[absolute path to the filesystem resource (file or folder). A star includes
+all files in a folder without the subfolders - a dash (-) includes all
+files in the folder and all subfolders recursively.]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_grantee" TYPE="varchar2">
+<COMMENT><![CDATA[database user to which to grant the privileges]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_permission" TYPE="pls_integer">
+<COMMENT><![CDATA[permissions to grant - use the package constants READ, WRITE and EXECUTE]]></COMMENT>
+</ARGUMENT>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_file_path  absolute path to the filesystem resource (file or folder). A star includes
+all files in a folder without the subfolders - a dash (-) includes all
+files in the folder and all subfolders recursively.]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_grantee    database user to which to grant the privileges]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_permission permissions to grant - use the package constants READ, WRITE and EXECUTE]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<PROCEDURE NAME="restrict_permission">
+<COMMENT_FIRST_LINE><![CDATA[restricts permissions on a file.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[restricts permissions on a file. This is a function to work with "negative" privileges. An example
+might be to use GRANT_PERMISSION to grant access to a folder and the use
+RESTRICT_PERMISSION to exempt particular files.
+<pre>
+file_security.restrict_permission(
+p_file_path  => '/home/oracle/*,
+p_grantee    => 'SCOTT',
+p_permission => FILE_SECURITY.READ + FILE_SECURITY.WRITE
+);
+</pre>
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_file_path" TYPE="varchar2">
+<COMMENT><![CDATA[absolute path to the filesystem resource (file or folder). A star includes
+all files in a folder without the subfolders - a dash (-) includes all
+files in the folder and all subfolders recursively.]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_grantee" TYPE="varchar2">
+<COMMENT><![CDATA[database user to which to grant the privileges]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_permission" TYPE="pls_integer">
+<COMMENT><![CDATA[permissions to grant - use the package constants READ, WRITE and EXECUTE]]></COMMENT>
+</ARGUMENT>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_file_path  absolute path to the filesystem resource (file or folder). A star includes
+all files in a folder without the subfolders - a dash (-) includes all
+files in the folder and all subfolders recursively.]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_grantee    database user to which to grant the privileges]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_permission permissions to grant - use the package constants READ, WRITE and EXECUTE]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<PROCEDURE NAME="grant_stdin_stdout">
+<COMMENT_FIRST_LINE><![CDATA[grants "file descriptor" read and write permissions - these are needed to access
+STDIN and STDOUT when working with OS_COMMAND.]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[grants "file descriptor" read and write permissions - these are needed to access
+STDIN and STDOUT when working with OS_COMMAND.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_grantee" TYPE="varchar2">
+<COMMENT><![CDATA[database user to which to grant the privileges]]></COMMENT>
+</ARGUMENT>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_grantee    database user to which to grant the privileges]]></COMMENT>
+</TAG>
+</PROCEDURE>
+<FUNCTION NAME="get_script_grant_java_privs">
+<COMMENT_FIRST_LINE><![CDATA[ generates a SQL scripts with DBMS_JAVA.GRANT_PERMISSION calls according to the
+ privileges granted on the directory object.
+]]></COMMENT_FIRST_LINE>
+<COMMENT><![CDATA[ generates a SQL scripts with DBMS_JAVA.GRANT_PERMISSION calls according to the
+ privileges granted on the directory object.
+]]></COMMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_directory" TYPE="varchar2">
+<COMMENT><![CDATA[name of the directory object]]></COMMENT>
+</ARGUMENT>
+<ARGUMENT DEFAULT="" MODE="" NAME="p_grantee" TYPE="varchar2">
+<COMMENT><![CDATA[grantee to generate grants for. If none is given, grants are
+                     being generated for all grantees]]></COMMENT>
+</ARGUMENT>
+<RETURN TYPE="varchar2">
+<COMMENT><![CDATA[SQL script containing DBMS_JAVA.GRANT_PERMISSION calls for the given directory object]]></COMMENT>
+</RETURN>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_directory  name of the directory object]]></COMMENT>
+</TAG>
+<TAG TYPE="@param">
+<COMMENT><![CDATA[p_grantee    grantee to generate grants for. If none is given, grants are
+                     being generated for all grantees]]></COMMENT>
+</TAG>
+<TAG TYPE="@return">
+<COMMENT><![CDATA[SQL script containing DBMS_JAVA.GRANT_PERMISSION calls for the given directory object]]></COMMENT>
+</TAG>
+</FUNCTION>
+</PACKAGE>
+<GENERATOR>
+<OBJECTS>
+<PROCESSED COUNT="1"/>
+<SKIPPED COUNT="0"/>
+</OBJECTS>
+<CREATED DATE="10.12.13" TIME="16:06"/>
+</GENERATOR>
+</APPLICATION>

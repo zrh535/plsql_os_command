@@ -1,0 +1,1373 @@
+<HTML>
+<HEAD>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<TITLE>File and operating system interaction with SQL and PLSQL</TITLE>
+<LINK TITLE="Style" HREF="stylesheet.css" TYPE="text/css" REL="stylesheet">
+</HEAD>
+<BODY BGCOLOR="white">
+<TABLE CELLSPACING="0" CELLPADDING="1" WIDTH="100%" BORDER="0">
+<TR>
+<TD CLASS="NavBarRow1" COLSPAN="2">
+<TABLE CELLSPACING="3" CELLPADDING="0" BORDER="0">
+<TR VALIGN="top" ALIGN="center">
+<TD CLASS="NavBarRow1"><A HREF="summary.html"><FONT CLASS="NavBarFont1"><B>Overview</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="deprecated-list.html"><FONT CLASS="NavBarFont1"><B>Deprecated</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="index-list.html"><FONT CLASS="NavBarFont1"><B>Index</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="generator.html"><FONT CLASS="NavBarFont1"><B>Generator</B></FONT></A> &nbsp;</TD>
+</TR>
+</TABLE>
+</TD><TD rowspan="3" VALIGN="top" ALIGN="right"><EM><b>File and operating system interaction with SQL and PLSQL</b></EM></TD>
+</TR>
+<TR>
+<TD CLASS="NavBarRow3" VALIGN="top"><FONT SIZE="-2">
+      SUMMARY:  <A HREF="#field_summary">FIELD</A> | <A HREF="#type_summary">TYPE</A> | <A HREF="#method_summary">METHOD</A></FONT></TD><TD CLASS="NavBarRow3" VALIGN="top"><FONT SIZE="-2">
+    DETAIL:  <A HREF="#field_detail">FIELD</A> | <A HREF="#type_detail">TYPE</A> | <A HREF="#method_detail">METHOD</A></FONT></TD>
+</TR>
+</TABLE>
+<HR>
+<H2>
+<FONT SIZE="-1"></FONT>
+<BR>
+    Package  os_command</H2><P> The OS_COMMAND package contains various functions for executing shell commands from the SQL engine.
+The different functions handle STDIN and STDOUT differently. As for the FILE_TYPE object type the
+database user needs appropriate privileges in order to execute the shell commands and to access
+STDIN and STDOUT. See the function documentation for details.<br/>
+<br/>
+The following script grants read and write permissions on STDIN and STDOUT and execute
+privileges for a specific shell command:
+<pre>
+
+begin
+-- this grants read privilege on STDIN
+dbms_java.grant_permission(
+grantee =&gt;           'SCOTT',
+permission_type =&gt;   'SYS:java.lang.RuntimePermission',
+permission_name =&gt;   'readFileDescriptor',
+permission_action =&gt; null
+);
+-- this grants write permission on STDOUT
+dbms_java.grant_permission(
+grantee =&gt;           'SCOTT',
+permission_type =&gt;   'SYS:java.lang.RuntimePermission',
+permission_name =&gt;   'writeFileDescriptor',
+permission_action =&gt; null
+);
+-- this grants execute privilege for the 'ls -la' command
+dbms_java.grant_permission(
+grantee =&gt;           'SCOTT',
+permission_type =&gt;   'SYS:java.io.FilePermission',
+permission_name =&gt;   '/bin/ls',
+permission_action =&gt; 'execute'
+);
+-- this grants execute privilege for ALL shell commands: VERY DANGEROUS!
+dbms_java.grant_permission(
+grantee =&gt;           'SCOTT',
+permission_type =&gt;   'SYS:java.io.FilePermission',
+permission_name =&gt;   '&lt;&lt;ALL FILES&gt;&gt;',
+permission_action =&gt; 'execute'
+);
+end;
+
+</pre>
+Usage examples:
+<ul>
+<li>
+SELECT'ing a directory listing ...
+<pre>
+SQL&gt; select os_command.exec_clob('ls -la /') directory_listing from dual;
+<br/>
+DIRECTORY_LISTING
+--------------------------------------------------------------------------------
+total 246
+drwxr-xr-x  25 root root  4096 Jan 21 09:15 .
+drwxr-xr-x  25 root root  4096 Jan 21 09:15 ..
+-rw-r--r--   1 root root     0 Jan 21 08:56 .autofsck
+-rw-r--r--   1 root root     0 Jan 17 17:11 .autorelabel
+drwxr-xr-x   2 root root  4096 Feb  6 15:03 bin
+drwxr-xr-x   4 root root  1024 Jan 17 18:18 boot
+drwxr-xr-x  11 root root  3900 Feb 14 09:40 dev
+</pre>
+</li><li>
+Executing the same directory listing but also gathering the return code:
+<pre>
+set serveroutput on
+declare
+v_stdout clob;
+v_return number;
+begin
+dbms_lob.createtemporary(v_stdout, true, DBMS_LOB.CALL);
+v_return := os_command.exec(p_command => 'ls -la /', p_stdout => v_stdout);
+dbms_output.put_line('Return code: '||v_return);
+dbms_output.put_line('LOB-Content: ');
+dbms_output.put_line('*************');
+dbms_output.put_line(v_stdout);
+dbms_lob.freetemporary(v_stdout);
+end;
+/
+Return code: 0
+LOB-Content:
+***********
+total 246
+drwxr-xr-x  25 root root  4096 Jan 21 09:15 .
+drwxr-xr-x  25 root root  4096 Jan 21 09:15 ..
+-rw-r--r--   1 root root     0 Jan 21 08:56 .autofsck
+-rw-r--r--   1 root root     0 Jan 17 17:11
+</pre>
+</li></ul>
+</P>
+<P></P>
+<DL></DL>
+<HR>
+<P></P>
+<A NAME="field_summary"></A><A NAME="type_summary"></A><A NAME="method_summary"></A>
+<TABLE WIDTH="100%" CELLSPACING="0" CELLPADDING="3" BORDER="1">
+<TR CLASS="TableHeadingColor">
+<TD COLSPAN="2"><FONT SIZE="+2"><B>Method Summary</B></FONT></TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#clear_environment">clear_environment</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      removes all environment variables from the "custom environment".</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#clear_working_dir">clear_working_dir</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      clears the working directory for the "exec" calls.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#exec(varchar2,blob)">exec</A></B>(p_command varchar2, p_stdin blob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#exec(varchar2,clob)">exec</A></B>(p_command varchar2, p_stdin clob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#exec(varchar2)">exec</A></B>(p_command varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#exec(varchar2,clob,clob)">exec</A></B>(p_command varchar2, p_stdin clob, p_stdout clob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#exec(varchar2,clob,blob)">exec</A></B>(p_command varchar2, p_stdin clob, p_stdout blob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#exec(varchar2,blob,blob)">exec</A></B>(p_command varchar2, p_stdin blob, p_stdout blob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#exec(varchar2,blob,clob)">exec</A></B>(p_command varchar2, p_stdin blob, p_stdout clob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#exec(varchar2,clob)">exec</A></B>(p_command varchar2, p_stdout clob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#exec(varchar2,blob)">exec</A></B>(p_command varchar2, p_stdout blob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#exec(varchar2,clob,clob,clob)">exec</A></B>(p_command varchar2, p_stdin clob, p_stdout clob, p_stderr clob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#exec(varchar2,clob,blob,blob)">exec</A></B>(p_command varchar2, p_stdin clob, p_stdout blob, p_stderr blob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#exec(varchar2,blob,blob,blob)">exec</A></B>(p_command varchar2, p_stdin blob, p_stdout blob, p_stderr blob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#exec(varchar2,blob,clob,clob)">exec</A></B>(p_command varchar2, p_stdin blob, p_stdout clob, p_stderr clob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#exec(varchar2,clob,clob)">exec</A></B>(p_command varchar2, p_stdout clob, p_stderr clob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;number</CODE></FONT></TD><TD><CODE><B><A HREF="#exec(varchar2,blob,blob)">exec</A></B>(p_command varchar2, p_stdout blob, p_stderr blob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;blob</CODE></FONT></TD><TD><CODE><B><A HREF="#exec_blob(varchar2,blob)">exec_BLOB</A></B>(p_command varchar2, p_stdin blob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;blob</CODE></FONT></TD><TD><CODE><B><A HREF="#exec_blob(varchar2,clob)">exec_BLOB</A></B>(p_command varchar2, p_stdin clob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;blob</CODE></FONT></TD><TD><CODE><B><A HREF="#exec_blob(varchar2)">exec_BLOB</A></B>(p_command varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;clob</CODE></FONT></TD><TD><CODE><B><A HREF="#exec_clob(varchar2,blob)">exec_CLOB</A></B>(p_command varchar2, p_stdin blob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;clob</CODE></FONT></TD><TD><CODE><B><A HREF="#exec_clob(varchar2,clob)">exec_CLOB</A></B>(p_command varchar2, p_stdin clob)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;clob</CODE></FONT></TD><TD><CODE><B><A HREF="#exec_clob(varchar2)">exec_CLOB</A></B>(p_command varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      executes a shell command
+</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;varchar2</CODE></FONT></TD><TD><CODE><B><A HREF="#get_env_var(varchar2)">get_env_var</A></B>(p_env_name varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      gets the value of the specified environment variable from the custom environment.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;varchar2</CODE></FONT></TD><TD><CODE><B><A HREF="#get_shell">get_shell</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      returns the operating system call for the current shell.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;FILE_TYPE</CODE></FONT></TD><TD><CODE><B><A HREF="#get_working_dir">get_working_dir</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      gets the current working directory setting; NULL if no working directory was set.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#load_env">load_env</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      copies the default environment (in which the "oracle" process runs) into the custom environment.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#load_env(varchar2)">load_env</A></B>(p_env_name varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      copies the specified environment variable from the default environment (in which the "oracle" process runs) into the custom environment.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#remove_env_var(varchar2)">remove_env_var</A></B>(p_env_name varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      removes an environment variable from the custom environment.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#set_env_var(varchar2,varchar2)">set_env_var</A></B>(p_env_name varchar2, p_env_value varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      sets an environment variable in the custom environment.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#set_exec_direct">set_exec_direct</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Execute operating system commands (<b>exec</b> procedures and functions) directly.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#set_exec_in_shell">set_exec_in_shell</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Execute operating system commands (<b>exec</b> procedures and functions) in a shell.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#set_shell(varchar2,varchar2)">set_Shell</A></B>(p_shell_path varchar2, p_shell_switch varchar2)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      sets the path and "command switch" for the shell to use if <b>set_exec_in_shell</b>
+was called.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#set_working_dir(file_type)">set_working_dir</A></B>(p_workdir file_type)</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      sets the working directory for the "exec" calls.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#use_custom_env">use_custom_env</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Use "custom" environment variables defined by this package for the "exec" calls.</TD>
+</TR>
+<TR CLASS="TableRowColor">
+<TD WIDTH="1%" VALIGN="top" ALIGN="right"><FONT SIZE="-1"><CODE>&nbsp;</CODE></FONT></TD><TD><CODE><B><A HREF="#use_default_env">use_default_env</A></B>()</CODE>
+<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Use "default" environment variables defined by this package for the "exec" calls.</TD>
+</TR>
+</TABLE>
+<P></P>
+<A NAME="trigger_summary"></A><A NAME="field_detail"></A><A NAME="type_detail"></A><A NAME="method_detail"></A>
+<TABLE WIDTH="100%" CELLSPACING="0" CELLPADDING="3" BORDER="1">
+<TR CLASS="TableHeadingColor">
+<TD COLSPAN="1"><FONT SIZE="+2"><B>Method Detail</B></FONT></TD>
+</TR>
+</TABLE>
+<A NAME="set_working_dir(file_type)"></A>
+<H3>set_working_dir</H3>
+<PRE>public  <B>set_working_dir</B>(p_workdir file_type)</PRE>
+<DL>
+<DD>sets the working directory for the "exec" calls. If no working directory is set, the working directory of the "oracle" process is being used.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_workdir</CODE> -
+              the working directory to use as FILE_TYPE.</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.6</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="clear_working_dir"></A>
+<H3>clear_working_dir</H3>
+<PRE>public  <B>clear_working_dir</B>()</PRE>
+<DL>
+<DD>clears the working directory for the "exec" calls. Now the working directory of the "oracle" process is being used.
+</DD>
+<DD>
+<DL></DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.6</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="get_working_dir"></A>
+<H3>get_working_dir</H3>
+<PRE>public FILE_TYPE <B>get_working_dir</B>()</PRE>
+<DL>
+<DD>gets the current working directory setting; NULL if no working directory was set.
+</DD>
+<DD>
+<DL>
+<DT>Returns:
+          <DD>the working directory which was set with the last call to <b>set_working_dir</b>; NULL of no directory was set.</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.6</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="clear_environment"></A>
+<H3>clear_environment</H3>
+<PRE>public  <B>clear_environment</B>()</PRE>
+<DL>
+<DD>removes all environment variables from the "custom environment".
+See <b>use_custom_env</b> for more information about the custom environment.
+</DD>
+<DD>
+<DL></DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.6</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="set_env_var(varchar2,varchar2)"></A>
+<H3>set_env_var</H3>
+<PRE>public  <B>set_env_var</B>(p_env_name varchar2, <BR>                    p_env_value varchar2)</PRE>
+<DL>
+<DD>sets an environment variable in the custom environment. An existing entry with the given variable name is being overwritten.
+See <b>use_custom_env</b> for more information about the custom environment.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_env_name</CODE> -
+              the name of the environment variable.</DD>
+<DD>
+<CODE>p_env_value</CODE> -
+              the value for this environment variable.</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.6</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="remove_env_var(varchar2)"></A>
+<H3>remove_env_var</H3>
+<PRE>public  <B>remove_env_var</B>(p_env_name varchar2)</PRE>
+<DL>
+<DD>removes an environment variable from the custom environment.
+See <b>use_custom_env</b> for more information about the custom environment.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_env_name</CODE> -
+              the name of the environment variable.</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.6</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="get_env_var(varchar2)"></A>
+<H3>get_env_var</H3>
+<PRE>public varchar2 <B>get_env_var</B>(p_env_name varchar2)</PRE>
+<DL>
+<DD>gets the value of the specified environment variable from the custom environment.
+See <b>use_custom_env</b> for more information about the custom environment.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_env_name</CODE> -
+              the name of the environment variable.</DD>
+</DT>
+<DT>Returns:
+          <DD>the value for this environment variable.</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.6</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="load_env"></A>
+<H3>load_env</H3>
+<PRE>public  <B>load_env</B>()</PRE>
+<DL>
+<DD>copies the default environment (in which the "oracle" process runs) into the custom environment. A
+<b>java.lang.RuntimePermission</b> (<code>getenv.*</code>) is needed in order to execute this.<br><br>
+<b>This is available in 11g oder higher</b>
+</DD>
+<DD>
+<DL></DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.6</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="load_env(varchar2)"></A>
+<H3>load_env</H3>
+<PRE>public  <B>load_env</B>(p_env_name varchar2)</PRE>
+<DL>
+<DD>copies the specified environment variable from the default environment (in which the "oracle" process runs) into the custom environment. <br><br>
+<b>This is available in 11g oder higher</b>
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_env_name</CODE> -
+              the name of the environment variable to copy.</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.6</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="use_custom_env"></A>
+<H3>use_custom_env</H3>
+<PRE>public  <B>use_custom_env</B>()</PRE>
+<DL>
+<DD>Use "custom" environment variables defined by this package for the "exec" calls. Operating
+system commands can be executed with the "custom" or "default" environment. The "default"
+environment is the environment of the Oracle processes - the "custom" environment can be
+set using the <b>set_env_var</b>, <b>get_env_var</b> or <b>remove_env_var</b> calls.<br/>
+The <b>use_custom_env</b> and <b>use_default_env</b> calls allow to switch between the
+default and the custom environment.
+</DD>
+<DD>
+<DL></DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.6</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="use_default_env"></A>
+<H3>use_default_env</H3>
+<PRE>public  <B>use_default_env</B>()</PRE>
+<DL>
+<DD>Use "default" environment variables defined by this package for the "exec" calls. Operating
+system commands can be executed with the "custom" or "default" environment. The "default"
+environment is the environment of the Oracle processes - the "custom" environment can be
+set using the <b>set_env_var</b>, <b>get_env_var</b> or <b>remove_env_var</b> calls.<br/>
+The <b>use_custom_env</b> and <b>use_default_env</b> calls allow to switch between the
+default and the custom environment.
+</DD>
+<DD>
+<DL></DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.6</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="set_shell(varchar2,varchar2)"></A>
+<H3>set_Shell</H3>
+<PRE>public  <B>set_Shell</B>(p_shell_path varchar2, <BR>                  p_shell_switch varchar2)</PRE>
+<DL>
+<DD>sets the path and "command switch" for the shell to use if <b>set_exec_in_shell</b>
+was called. A typical call on Unix is:
+<pre>
+OS_COMMAND.SET_SHELL('/bin/sh', '-c');
+</pre>
+On Windows:
+<pre>
+OS_COMMAND.SET_SHELL('C:\WINDOWS\SYSTEM32\CMD.EXE', '/C');
+</pre>
+These are also the default settings.
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_shell_path</CODE> -
+              path to the shell executable e.g. "/bin/sh"</DD>
+<DD>
+<CODE>p_shell_switch</CODE> -
+              shell executable switch to execute a command e.g. "-c"</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.9</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="get_shell"></A>
+<H3>get_shell</H3>
+<PRE>public varchar2 <B>get_shell</B>()</PRE>
+<DL>
+<DD>returns the operating system call for the current shell. This shell is being used for the <b>exec</b>
+calls.
+<pre>
+select OS_COMMAND.GET_SHELL shell from dual;
+
+SHELL
+------
+/bin/sh -c
+</pre>
+</DD>
+<DD>
+<DL>
+<DT>Returns:
+          <DD>the current shell and "execute command switch"</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.9</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="set_exec_in_shell"></A>
+<H3>set_exec_in_shell</H3>
+<PRE>public  <B>set_exec_in_shell</B>()</PRE>
+<DL>
+<DD>Execute operating system commands (<b>exec</b> procedures and functions) in a shell. The
+shell defaults <b>/bin/sh -c</b> on Unix and to <b>C:\WINDOWS\SYSTEM32\CMD.EXE /C</b> on
+Linux. The <b>set_shell</b> procedure allows to change the shell. <br/>
+Use this to execute e.g. complex Unix shell commands:
+<pre>
+begin
+OS_COMMAND.SET_EXEC_IN_SHELL;
+end;
+/
+
+select os_command.exec_clob('/bin/ls -la /usr/lib | /usr/bin/grep .so | /usr/bin/wc -l') complex_command from dual;
+
+COMPLEX_COMMAND
+---------------
+345
+</pre>
+</DD>
+<DD>
+<DL></DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.9</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="set_exec_direct"></A>
+<H3>set_exec_direct</H3>
+<PRE>public  <B>set_exec_direct</B>()</PRE>
+<DL>
+<DD>Execute operating system commands (<b>exec</b> procedures and functions) directly. Note
+that complex shell commands will result in an error. Try <b>set_exec_in_shell</b> in
+those cases.
+<pre>
+begin
+OS_COMMAND.SET_EXEC_DIRECT;
+end;
+/
+select os_command.exec_clob('/bin/ls -la /usr/lib | /usr/bin/grep .so | /usr/bin/wc -l') complex_command from dual;
+COMPLEX_COMMAND
+---------------------------------------------------------------
+Error during creation of the process
+
+begin
+OS_COMMAND.SET_EXEC_IN_SHELL;
+end;
+/
+select os_command.exec_clob('/bin/ls -la /usr/lib | /usr/bin/grep .so | /usr/bin/wc -l') complex_command from dual;
+COMPLEX_COMMAND
+---------------
+345
+</pre>
+</DD>
+<DD>
+<DL></DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.9</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec_clob(varchar2,blob)"></A>
+<H3>exec_CLOB</H3>
+<PRE>public clob <B>exec_CLOB</B>(p_command varchar2, <BR>                      p_stdin blob)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+<DD>
+<CODE>p_stdin</CODE> -
+              binary content (BLOB) to be passed to STDIN</DD>
+</DT>
+<DT>Returns:
+          <DD>content written by the shell command to STDOUT as CLOB</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.1</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec_clob(varchar2,clob)"></A>
+<H3>exec_CLOB</H3>
+<PRE>public clob <B>exec_CLOB</B>(p_command varchar2, <BR>                      p_stdin clob)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+<DD>
+<CODE>p_stdin</CODE> -
+              character content (CLOB) to be passed to STDIN</DD>
+</DT>
+<DT>Returns:
+          <DD>content written by the shell command to STDOUT as CLOB</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.1</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec_blob(varchar2,blob)"></A>
+<H3>exec_BLOB</H3>
+<PRE>public blob <B>exec_BLOB</B>(p_command varchar2, <BR>                      p_stdin blob)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+<DD>
+<CODE>p_stdin</CODE> -
+              binary content (BLOB) to be passed to STDIN</DD>
+</DT>
+<DT>Returns:
+          <DD>content written by the shell command to STDOUT as BLOB</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.1</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec_blob(varchar2,clob)"></A>
+<H3>exec_BLOB</H3>
+<PRE>public blob <B>exec_BLOB</B>(p_command varchar2, <BR>                      p_stdin clob)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+<DD>
+<CODE>p_stdin</CODE> -
+              character content (CLOB) to be passed to STDIN</DD>
+</DT>
+<DT>Returns:
+          <DD>content written by the shell command to STDOUT as BLOB</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.1</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec_clob(varchar2)"></A>
+<H3>exec_CLOB</H3>
+<PRE>public clob <B>exec_CLOB</B>(p_command varchar2)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+</DT>
+<DT>Returns:
+          <DD>content written by the shell command to STDOUT as CLOB</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.1</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec_blob(varchar2)"></A>
+<H3>exec_BLOB</H3>
+<PRE>public blob <B>exec_BLOB</B>(p_command varchar2)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+</DT>
+<DT>Returns:
+          <DD>content written by the shell command to STDOUT as BLOB</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.1</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec(varchar2,blob)"></A>
+<H3>exec</H3>
+<PRE>public number <B>exec</B>(p_command varchar2, <BR>                   p_stdin blob)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+<DD>
+<CODE>p_stdin</CODE> -
+              binary content (BLOB) to be passed to STDIN</DD>
+</DT>
+<DT>Returns:
+          <DD>the operating system return code (0 for success)</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.1</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec(varchar2,clob)"></A>
+<H3>exec</H3>
+<PRE>public number <B>exec</B>(p_command varchar2, <BR>                   p_stdin clob)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+<DD>
+<CODE>p_stdin</CODE> -
+              character content (CLOB) to be passed to STDIN</DD>
+</DT>
+<DT>Returns:
+          <DD>the operating system return code (0 for success)</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.1</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec(varchar2)"></A>
+<H3>exec</H3>
+<PRE>public number <B>exec</B>(p_command varchar2)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+</DT>
+<DT>Returns:
+          <DD>the operating system return code (0 for success)</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.1</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec(varchar2,clob,clob)"></A>
+<H3>exec</H3>
+<PRE>public number <B>exec</B>(p_command varchar2, <BR>                   p_stdin clob, <BR>                   p_stdout clob)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+<DD>
+<CODE>p_stdin</CODE> -
+              character content (CLOB) to be passed to STDIN</DD>
+<DD>
+<CODE>p_stdout</CODE> -
+              OUT Parameter: content written by the shell command to STDOUT as CLOB. This must be a valid LOB locator (persistent or temporary LOB)</DD>
+</DT>
+<DT>Returns:
+          <DD>the operating system return code (0 for success)</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.1</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec(varchar2,clob,blob)"></A>
+<H3>exec</H3>
+<PRE>public number <B>exec</B>(p_command varchar2, <BR>                   p_stdin clob, <BR>                   p_stdout blob)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+<DD>
+<CODE>p_stdin</CODE> -
+              character content (CLOB) to be passed to STDIN</DD>
+<DD>
+<CODE>p_stdout</CODE> -
+              OUT Parameter: content written by the shell command to STDOUT as BLOB. This must be a valid LOB locator (persistent or temporary LOB)</DD>
+</DT>
+<DT>Returns:
+          <DD>the operating system return code (0 for success)</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.1</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec(varchar2,blob,blob)"></A>
+<H3>exec</H3>
+<PRE>public number <B>exec</B>(p_command varchar2, <BR>                   p_stdin blob, <BR>                   p_stdout blob)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+<DD>
+<CODE>p_stdin</CODE> -
+              binary content (BLOB) to be passed to STDIN</DD>
+<DD>
+<CODE>p_stdout</CODE> -
+              OUT Parameter: content written by the shell command to STDOUT as BLOB. This must be a valid LOB locator (persistent or temporary LOB)</DD>
+</DT>
+<DT>Returns:
+          <DD>the operating system return code (0 for success)</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.1</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec(varchar2,blob,clob)"></A>
+<H3>exec</H3>
+<PRE>public number <B>exec</B>(p_command varchar2, <BR>                   p_stdin blob, <BR>                   p_stdout clob)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+<DD>
+<CODE>p_stdin</CODE> -
+              binary content (BLOB) to be passed to STDIN</DD>
+<DD>
+<CODE>p_stdout</CODE> -
+              OUT Parameter: content written by the shell command to STDOUT as CLOB. This must be a valid LOB locator (persistent or temporary LOB)</DD>
+</DT>
+<DT>Returns:
+          <DD>the operating system return code (0 for success)</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.1</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec(varchar2,clob)"></A>
+<H3>exec</H3>
+<PRE>public number <B>exec</B>(p_command varchar2, <BR>                   p_stdout clob)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+<DD>
+<CODE>p_stdout</CODE> -
+              OUT Parameter: content written by the shell command to STDOUT as CLOB. This must be a valid LOB locator (persistent or temporary LOB)</DD>
+</DT>
+<DT>Returns:
+          <DD>the operating system return code (0 for success)</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.1</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec(varchar2,blob)"></A>
+<H3>exec</H3>
+<PRE>public number <B>exec</B>(p_command varchar2, <BR>                   p_stdout blob)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+<DD>
+<CODE>p_stdout</CODE> -
+              OUT Parameter: content written by the shell command to STDOUT as BLOB. This must be a valid LOB locator (persistent or temporary LOB)</DD>
+</DT>
+<DT>Returns:
+          <DD>the operating system return code (0 for success)</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>0.1</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec(varchar2,clob,clob,clob)"></A>
+<H3>exec</H3>
+<PRE>public number <B>exec</B>(p_command varchar2, <BR>                   p_stdin clob, <BR>                   p_stdout clob, <BR>                   p_stderr clob)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+<DD>
+<CODE>p_stdin</CODE> -
+              content to be passed to STDIN</DD>
+<DD>
+<CODE>p_stdout</CODE> -
+              CLOB to store STDOUT output in - must be a valid LOB locator (persistent or temporary LOB)</DD>
+<DD>
+<CODE>p_stderr</CODE> -
+              CLOB to store STDERR output in - must be a valid LOB locator (persistent or temporary LOB)</DD>
+</DT>
+<DT>Returns:
+          <DD>the operating system return code (0 for success)</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>1.0</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec(varchar2,clob,blob,blob)"></A>
+<H3>exec</H3>
+<PRE>public number <B>exec</B>(p_command varchar2, <BR>                   p_stdin clob, <BR>                   p_stdout blob, <BR>                   p_stderr blob)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+<DD>
+<CODE>p_stdin</CODE> -
+              content to be passed to STDIN</DD>
+<DD>
+<CODE>p_stdout</CODE> -
+              BLOB to store STDOUT output in - must be a valid LOB locator (persistent or temporary LOB)</DD>
+<DD>
+<CODE>p_stderr</CODE> -
+              BLOB to store STDERR output in - must be a valid LOB locator (persistent or temporary LOB)</DD>
+</DT>
+<DT>Returns:
+          <DD>the operating system return code (0 for success)</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>1.0</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec(varchar2,blob,blob,blob)"></A>
+<H3>exec</H3>
+<PRE>public number <B>exec</B>(p_command varchar2, <BR>                   p_stdin blob, <BR>                   p_stdout blob, <BR>                   p_stderr blob)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+<DD>
+<CODE>p_stdin</CODE> -
+              content to be passed to STDIN</DD>
+<DD>
+<CODE>p_stdout</CODE> -
+              BLOB to store STDOUT output in - must be a valid LOB locator (persistent or temporary LOB)</DD>
+<DD>
+<CODE>p_stderr</CODE> -
+              BLOB to store STDERR output in - must be a valid LOB locator (persistent or temporary LOB)</DD>
+</DT>
+<DT>Returns:
+          <DD>the operating system return code (0 for success)</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>1.0</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec(varchar2,blob,clob,clob)"></A>
+<H3>exec</H3>
+<PRE>public number <B>exec</B>(p_command varchar2, <BR>                   p_stdin blob, <BR>                   p_stdout clob, <BR>                   p_stderr clob)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+<DD>
+<CODE>p_stdin</CODE> -
+              content to be passed to STDIN</DD>
+<DD>
+<CODE>p_stdout</CODE> -
+              CLOB to store STDOUT output in - must be a valid LOB locator (persistent or temporary LOB)</DD>
+<DD>
+<CODE>p_stderr</CODE> -
+              CLOB to store STDERR output in - must be a valid LOB locator (persistent or temporary LOB)</DD>
+</DT>
+<DT>Returns:
+          <DD>the operating system return code (0 for success)</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>1.0</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec(varchar2,clob,clob)"></A>
+<H3>exec</H3>
+<PRE>public number <B>exec</B>(p_command varchar2, <BR>                   p_stdout clob, <BR>                   p_stderr clob)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+<DD>
+<CODE>p_stdout</CODE> -
+              CLOB to store STDOUT output in - must be a valid LOB locator (persistent or temporary LOB)</DD>
+<DD>
+<CODE>p_stderr</CODE> -
+              CLOB to store STDERR output in - must be a valid LOB locator (persistent or temporary LOB)</DD>
+</DT>
+<DT>Returns:
+          <DD>the operating system return code (0 for success)</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>1.0</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="exec(varchar2,blob,blob)"></A>
+<H3>exec</H3>
+<PRE>public number <B>exec</B>(p_command varchar2, <BR>                   p_stdout blob, <BR>                   p_stderr blob)</PRE>
+<DL>
+<DD>executes a shell command
+</DD>
+<DD>
+<DL>
+<DT>Parameters:
+        <DD>
+<CODE>p_command</CODE> -
+              the command string to execute</DD>
+<DD>
+<CODE>p_stdout</CODE> -
+              BLOB to store STDOUT output in - must be a valid LOB locator (persistent or temporary LOB)</DD>
+<DD>
+<CODE>p_stderr</CODE> -
+              BLOB to store STDERR output in - must be a valid LOB locator (persistent or temporary LOB)</DD>
+</DT>
+<DT>Returns:
+          <DD>the operating system return code (0 for success)</DD>
+</DT>
+</DL>
+</DD>
+<P></P>
+<DL>
+<DT>Version:</DT>
+<DD>1.0</DD>
+</DL>
+</DL>
+<HR>
+<A NAME="trigger_detail"></A>
+<TABLE CELLSPACING="0" CELLPADDING="1" WIDTH="100%" BORDER="0">
+<TR>
+<TD CLASS="NavBarRow1" COLSPAN="2">
+<TABLE CELLSPACING="3" CELLPADDING="0" BORDER="0">
+<TR VALIGN="top" ALIGN="center">
+<TD CLASS="NavBarRow1"><A HREF="summary.html"><FONT CLASS="NavBarFont1"><B>Overview</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="deprecated-list.html"><FONT CLASS="NavBarFont1"><B>Deprecated</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="index-list.html"><FONT CLASS="NavBarFont1"><B>Index</B></FONT></A> &nbsp;</TD><TD CLASS="NavBarRow1"><A HREF="generator.html"><FONT CLASS="NavBarFont1"><B>Generator</B></FONT></A> &nbsp;</TD>
+</TR>
+</TABLE>
+</TD><TD rowspan="3" VALIGN="top" ALIGN="right"><EM><b>File and operating system interaction with SQL and PLSQL</b></EM></TD>
+</TR>
+<TR>
+<TD CLASS="NavBarRow3" VALIGN="top"><FONT SIZE="-2">
+      SUMMARY:  <A HREF="#field_summary">FIELD</A> | <A HREF="#type_summary">TYPE</A> | <A HREF="#method_summary">METHOD</A></FONT></TD><TD CLASS="NavBarRow3" VALIGN="top"><FONT SIZE="-2">
+    DETAIL:  <A HREF="#field_detail">FIELD</A> | <A HREF="#type_detail">TYPE</A> | <A HREF="#method_detail">METHOD</A></FONT></TD>
+</TR>
+</TABLE>
+<HR>
+</BODY>
+</HTML>
