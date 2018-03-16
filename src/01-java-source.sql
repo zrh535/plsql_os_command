@@ -2,19 +2,19 @@
  * 01-java-source.sql
  *
  * DATABASE VERSION:
- *    12c Release 1 (12.1.0.x) 
- * 
+ *    12c Release 1 (12.1.0.x)
+ *
  * DESCRIPTION:
  *    Java helper classes for accessing the operating system from the SQL layer
  *    + FILE_TYPE_JAVA (Java class "FileType")
  *    + OS_HELPER      (Java class "ExternalCall")
- *    
+ *
  *    See the documentation and README files vor more information
  *
  * AUTHOR:
  *    Carsten Czarski (carsten.czarski@gmx.de)
  *
- * VERSION: 
+ * VERSION:
  *    1.0
  *
  * CHANGES
@@ -90,7 +90,7 @@ public class FileType implements SQLData {
 
   private boolean hasInputStream() throws Exception {
     return (hsFileStream.containsKey(filePath));
-  } 
+  }
 
   public int isStreamOpen() throws Exception {
     return (hasInputStream()?1:0);
@@ -117,7 +117,7 @@ public class FileType implements SQLData {
     } else {
       return new Integer(iByteRead);
     }
-  } 
+  }
 
   public long writeBytes(byte[] baBytes, long pOffset) throws Exception {
     long iLength = 0;
@@ -160,11 +160,11 @@ public class FileType implements SQLData {
     if (baBytes == null) {
       return null;
     } else {
-      return new String(baBytes, pCharset);  
+      return new String(baBytes, pCharset);
     }
   }
 
-  public byte[] readBytes(int pAmount) throws Exception { 
+  public byte[] readBytes(int pAmount) throws Exception {
     int    iBytesRead = 0;
     byte[] baBytesRead;
     byte[] baBytesReturn;
@@ -193,7 +193,7 @@ public class FileType implements SQLData {
     if (baBytes == null) {
       return null;
     } else {
-      return new String(baBytes, pCharset);  
+      return new String(baBytes, pCharset);
     }
   }
 
@@ -211,7 +211,7 @@ public class FileType implements SQLData {
 
   private static void doPrepareFileList(String pDir, boolean pRecursive) throws Exception {
     File[] oFileList = new File(pDir).listFiles();
- 
+
     if (oFileList != null) {
       for (int i=0;i<oFileList.length;i++) {
         vLastDirListing.add(oFileList[i]);
@@ -247,7 +247,7 @@ public class FileType implements SQLData {
     if (iDirListCursor < vLastDirListing.size()) {
       iDirListCursor ++;
       return convertToStruct((File)vLastDirListing.get(iDirListCursor - 1));
-    } else { 
+    } else {
       return null;
     }
   }
@@ -267,7 +267,7 @@ public class FileType implements SQLData {
         iCurrentFileCnt++;
       }
       return new ARRAY(aDescr, con, vTransportFiles.toArray());
-    } else { 
+    } else {
       return null;
     }
   }
@@ -304,7 +304,7 @@ public class FileType implements SQLData {
   }
 
   public static STRUCT getRoot() throws Exception {
-    return convertToStruct(File.listRoots()[0]); 
+    return convertToStruct(File.listRoots()[0]);
   }
 
   public static ARRAY getFileList(oracle.sql.STRUCT pFile, boolean pRecursive) throws Exception{
@@ -338,7 +338,7 @@ public class FileType implements SQLData {
     }
   }
 
-  
+
 
   public static STRUCT getFile(String pFilePath) throws Exception {
     File f = new File(pFilePath);
@@ -423,7 +423,7 @@ public class FileType implements SQLData {
       return convertToStruct(cf);
     } else {
       return convertToStruct(pf);
-    } 
+    }
   }
 
   public STRUCT mkdir(String sDirName) throws Exception {
@@ -434,7 +434,7 @@ public class FileType implements SQLData {
       return null;
     }
   }
-    
+
   public STRUCT createFile (String sFileName) throws Exception {
     File f = new File(filePath + File.separator + sFileName);
     if (f.createNewFile()) {
@@ -462,8 +462,8 @@ public class FileType implements SQLData {
       return null;
     }
   }
-  
-  
+
+
 
   public void copy(InputStream r, OutputStream w, byte[] b) throws Exception {
     int iCharsRead = 0;
@@ -535,33 +535,33 @@ public class FileType implements SQLData {
     File f = new File(filePath);
     Reader              clobReader  = null;
     Writer              fileWriter  = null;
-    
+
     char[] cBuffer = null;
 
     clobReader = clobContent.getCharacterStream(0L);
     cBuffer = new char[clobContent.getChunkSize()];
     fileWriter = new FileWriter(f, append);
-    
+
     copy(clobReader, fileWriter, cBuffer);
 
     clobReader.close();
     fileWriter.flush();
     fileWriter.close();
     return f.length();
-  }   
+  }
 
   public long writeBlobToFile(BLOB blobContent, boolean append) throws Exception {
     File f = new File(filePath);
     InputStream         blobReader  = null;
     OutputStream        fileWriter  = null;
-    
+
     byte[] bBuffer = null;
 
     blobContent.open(BLOB.MODE_READONLY);
     blobReader = blobContent.getBinaryStream(0L);
     bBuffer = new byte[blobContent.getChunkSize()];
     fileWriter = new FileOutputStream(f, append);
-    
+
     copy(blobReader, fileWriter, bBuffer);
 
     blobReader.close();
@@ -569,13 +569,13 @@ public class FileType implements SQLData {
     fileWriter.close();
     blobContent.close();
     return f.length();
-  }   
+  }
 
   public CLOB getContentCLOB(String pCharset) throws Exception {
     File f = new File(filePath);
     Writer              clobWriter  = null;
     InputStream         fileReader  = null;
-    
+
     byte[] bBuffer = null;
 
     CLOB fileContent = CLOB.createTemporary(con, true, CLOB.DURATION_CALL);
@@ -598,7 +598,7 @@ public class FileType implements SQLData {
       }
     }
     return fileContent;
-  }   
+  }
 
   public long getFreeSpace() throws Exception {
     return new File(filePath).getFreeSpace();
@@ -631,7 +631,7 @@ public class FileType implements SQLData {
       }
     }
     return fileContent;
-  }   
+  }
 
   private void deleteRecursive(File currentDir) throws Exception {
     File[] dirEntries = currentDir.listFiles();
@@ -694,14 +694,14 @@ public class FileType implements SQLData {
         stream.writeString(f.canWrite()?"Y":"N");
       } catch (SecurityException e) {
         stream.writeString("N");
-      }          
+      }
       stream.writeString(f.canRead()?"Y":"N");
       stream.writeString("Y");
     }
   }
 }
 /
-sho err  
+sho err
 
 prompt ... compiling java FILE_TYPE
 
@@ -723,16 +723,16 @@ public class ExternalCall {
   private static class StreamReaderAccumulator extends Thread {
   	 private final InputStreamReader is;
     private final Writer w;
-  
+
   	 private Throwable throwable = null;
     char cBuf[] = new char[4096];
     int iCharsRead = 0;
-  
+
   	 StreamReaderAccumulator (InputStream is, Writer w) {
   	   this.is = new InputStreamReader(is);
       this.w = w;
   	 }
-  
+
   	 public void run() {
   	   try {
         while ((iCharsRead = is.read(cBuf, 0, cBuf.length)) != -1) {
@@ -744,25 +744,25 @@ public class ExternalCall {
   	    }
   	 }
   }
-  
+
   private static class StreamAccumulator extends Thread {
   	 private final InputStream is;
     private final OutputStream os;
-  
+
   	 private Throwable throwable = null;
     byte[] cBuf = new byte[4096];
     int iCharsRead = 0;
-  
+
   	 StreamAccumulator (InputStream is, OutputStream os) {
   	   this.is = is;
       this.os = os;
   	 }
-  
+
  	 StreamAccumulator (InputStream is) {
   	   this.is = is;
       this.os = null;
   	 }
-  
+
   	 public void run() {
   	   try {
         while ((iCharsRead = is.read(cBuf, 0, cBuf.length)) != -1) {
@@ -775,7 +775,7 @@ public class ExternalCall {
   	    }
   	 }
   }
-  
+
   static class ReturnData {
     public oracle.sql.Datum stdout;
     public oracle.sql.Datum stderr;
@@ -802,7 +802,7 @@ public class ExternalCall {
     } else {
       gsShellPath = "C:\\WINDOWS\\SYSTEM32\\cmd.exe";
       gsShellSwitch = "/C";
-    } 
+    }
 
     try {
       con = DriverManager.getConnection("jdbc:default:connection:");
@@ -819,7 +819,7 @@ public class ExternalCall {
   public static void useNoShell() {
     gbUseShell = false;
   }
- 
+
   public static void setShell(String pShellPath, String pShellSwitch) {
     gsShellPath = pShellPath;
     gsShellSwitch = pShellSwitch;
@@ -844,7 +844,7 @@ public class ExternalCall {
   public static STRUCT getWorkingDir() throws Exception {
     if (fWorkingDir != null) {
       STRUCT   oraFileType = null;
-  
+
       oFileType[0] = fWorkingDir.getAbsolutePath();
       if (fWorkingDir.exists()) {
         oFileType[1] = fWorkingDir.getName();
@@ -853,7 +853,7 @@ public class ExternalCall {
         oFileType[4] = (fWorkingDir.isDirectory()?"Y":"N");
         try {
           oFileType[5] = (fWorkingDir.canWrite()?"Y":"N");
-        } catch (SecurityException e) { 
+        } catch (SecurityException e) {
           oFileType[5] = "N";
         }
         oFileType[6] = (fWorkingDir.canRead()?"Y":"N");
@@ -926,7 +926,7 @@ public class ExternalCall {
       tempLob = null;
     }
 
-    return doit(sCommand, data, tempLob); 
+    return doit(sCommand, data, tempLob);
   }
 
   private static ReturnData doit(String sCommand, Datum data, Datum tempLob) throws Exception {
@@ -998,7 +998,7 @@ public class ExternalCall {
         dStdInR  = ((CLOB)stdInLob).getCharacterStream();
         caStdInBuffer = new char[((CLOB)stdInLob).getChunkSize()];
       } else {
-        // do nothing 
+        // do nothing
       }
     }
 
@@ -1032,7 +1032,7 @@ public class ExternalCall {
         pStdInW.close();
       }
     }
-    
+
     Thread  outAccumulator = null;
     Thread  errAccumulator = null;
 
@@ -1054,11 +1054,11 @@ public class ExternalCall {
 	       errAccumulator = new StreamAccumulator(p.getErrorStream(), dStdErrS);
       }
     }
- 
+
     try {
       outAccumulator.start();
       errAccumulator.start();
- 
+
       p.waitFor();
 
       outAccumulator.join();
@@ -1067,7 +1067,7 @@ public class ExternalCall {
 
     try {
       dStdOutW.flush();
-      dStdOutW.close(); 
+      dStdOutW.close();
     } catch (Exception e) {}
     try {
       dStdOutS.flush();

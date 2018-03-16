@@ -3,10 +3,10 @@
  *
  * DATABASE VERSION:
  *    11g Release 1 (11.1.0.x) and 11g Release 2 (11.2.0.x)
- * 
+ *
  * DESCRIPTION:
  *    PL/SQL Package specifications and Object type definitions:
- *    + OS_COMMAND 
+ *    + OS_COMMAND
  *    + FILE_PKG
  *    + LOB_WRITER_PLSQL
  *    + FILE_TYPE
@@ -16,13 +16,13 @@
  * AUTHOR:
  *    Carsten Czarski (carsten.czarski@gmx.de)
  *
- * VERSION: 
+ * VERSION:
  *    1.0
  */
 
 prompt ... type spec FILE_TYPE
 
-create type FILE_TYPE authid current_user as object 
+create type FILE_TYPE authid current_user as object
 (
   file_path      varchar2(4000),
   file_name      varchar2(4000),
@@ -126,13 +126,13 @@ is
   function get_recursive_file_list_p(p_directory in file_type)
   return file_list_type pipelined;
   function get_file_list_p (p_directory in file_type)
-  return file_list_type pipelined; 
+  return file_list_type pipelined;
 
   /* 1.0 ## DIRECTORY Object integration */
   function get_file(p_directory in varchar2, p_filename in varchar2) return file_type;
   function get_file(p_bfile in bfile) return file_type;
   function get_file_list(p_directory_name in varchar2) return file_list_type;
-  function get_file_list_p (p_directory_name in varchar2) return file_list_type pipelined; 
+  function get_file_list_p (p_directory_name in varchar2) return file_list_type pipelined;
 
   function remove_multiple_separators(p_path in varchar2) return varchar2;
 end file_pkg;
@@ -146,13 +146,15 @@ create or replace package os_command authid current_user is
   procedure set_working_dir (p_workdir in file_type);
   procedure clear_working_dir;
   function get_working_dir return FILE_TYPE;
-  
+
   procedure clear_environment;
   procedure set_env_var(p_env_name in varchar2, p_env_value in varchar2);
   procedure remove_env_var(p_env_name in varchar2);
   function get_env_var(p_env_name in varchar2) return varchar2;
+$IF DBMS_DB_VERSION.VERSION >= 11 $THEN
   procedure load_env;
   procedure load_env(p_env_name in varchar2);
+$end
 
   procedure use_custom_env;
   procedure use_default_env;
@@ -175,7 +177,7 @@ create or replace package os_command authid current_user is
   /* ... for commands expecting text input and returning binary output */
 
   /* the following two functions execute just the command "p_command"; no
-   * content is piped into the standard input. */ 
+   * content is piped into the standard input. */
   function exec_CLOB(p_command in varchar2) return Clob;
   /* ... for commands returning text output */
   function exec_BLOB(p_command in varchar2) return blob;
@@ -209,12 +211,12 @@ create or replace package lob_writer_plsql is
     p_directory varchar2,
     p_filename  varchar2,
     p_data      clob
-  ); 
+  );
   procedure write_blob(
     p_directory varchar2,
     p_filename  varchar2,
     p_data      blob
-  ); 
+  );
 end lob_writer_plsql;
 /
 sho err
@@ -225,31 +227,31 @@ create or replace package file_security authid current_user is
   READ  constant pls_integer := 1;
   WRITE constant pls_integer := 2;
   EXEC  constant pls_integer := 4;
- 
+
   procedure grant_permission(
     p_file_path  in varchar2,
     p_grantee    in varchar2,
-    p_permission in pls_integer  
+    p_permission in pls_integer
   );
 
   procedure revoke_permission(
     p_file_path  in varchar2,
     p_grantee    in varchar2,
-    p_permission in pls_integer  
+    p_permission in pls_integer
   );
-  
+
   procedure restrict_permission(
     p_file_path  in varchar2,
     p_grantee    in varchar2,
-    p_permission in pls_integer 
+    p_permission in pls_integer
   );
 
   procedure grant_stdin_stdout(
     p_grantee    in varchar2
-  ); 
+  );
 
   function get_script_grant_java_privs(
-    p_directory in varchar2, 
+    p_directory in varchar2,
     p_grantee in varchar2 default null
   ) return varchar2;
 end file_security;
@@ -264,4 +266,3 @@ create or replace package file_pkg_version is
 end file_pkg_version;
 /
 sho err
-

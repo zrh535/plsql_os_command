@@ -2,11 +2,11 @@
  * 03-plsql-body.sql
  *
  * DATABASE VERSION:
- *    12g Release 1 (12.1.0.x) 
- * 
+ *    12g Release 1 (12.1.0.x)
+ *
  * DESCRIPTION:
  *    PL/SQL Package Bodys
- *    + OS_COMMAND 
+ *    + OS_COMMAND
  *    + FILE_PKG
  *    + LOB_WRITER_PLSQL
  *
@@ -15,33 +15,33 @@
  * AUTHOR:
  *    Carsten Czarski (carsten.czarski@gmx.de)
  *
- * VERSION: 
+ * VERSION:
  *    1.0
  */
 
 prompt ... type body FILE_TYPE
 
-create or replace type body file_type as 
+create or replace type body file_type as
   member function get_bfile(p_directory_name in varchar2 default null) return bfile is
   l_dirname  varchar2(200);
     l_filename varchar2(4000);
     l_pathsep  varchar2(10) := file_pkg.get_path_separator;
     l_bfile    bfile;
   begin
-    if self.is_dir = 'Y' then 
-      raise_application_error(-20000, 'CANNOT CONVERT DIRECTORY INTO BFILE', true); 
+    if self.is_dir = 'Y' then
+      raise_application_error(-20000, 'CANNOT CONVERT DIRECTORY INTO BFILE', true);
     end if;
 
-    l_filename := substr(self.file_path, instr(self.file_path, file_pkg.get_path_separator, -1)); 
+    l_filename := substr(self.file_path, instr(self.file_path, file_pkg.get_path_separator, -1));
     l_filename := ltrim(l_filename, l_pathsep);
 
-    if p_directory_name is not null then 
+    if p_directory_name is not null then
       l_bfile :=  bfilename(p_directory_name, l_filename);
-    else 
+    else
       l_dirname := self.get_directory();
       if l_dirname is null then
-        raise_application_error(-20000, 'NO DIRECTORY OBJECT PRESENT FOR THIS FILE_TYPE', true); 
-      else 
+        raise_application_error(-20000, 'NO DIRECTORY OBJECT PRESENT FOR THIS FILE_TYPE', true);
+      else
         l_bfile := bfilename(l_dirname, l_filename);
       end if;
     end if;
@@ -54,38 +54,38 @@ create or replace type body file_type as
     l_dirname  all_directories.directory_path%type;
     l_pathsep  varchar2(10) := file_pkg.get_path_separator;
   begin
-    if self.is_dir = 'Y' then 
+    if self.is_dir = 'Y' then
       l_dirpath := rtrim(self.file_path, l_pathsep);
-    else 
-      l_dirpath  := substr(self.file_path, 1, instr(self.file_path, l_pathsep, -1)); 
+    else
+      l_dirpath  := substr(self.file_path, 1, instr(self.file_path, l_pathsep, -1));
       l_dirpath  := file_pkg.remove_multiple_separators(l_dirpath);
-      l_filename := substr(self.file_path, instr(self.file_path, l_pathsep, -1)); 
+      l_filename := substr(self.file_path, instr(self.file_path, l_pathsep, -1));
       l_filename := ltrim(l_filename, l_pathsep);
     end if;
     begin
-      if l_dirpath is not null then 
+      if l_dirpath is not null then
         -- Inline View with MATERIALIZE hint to avoid ORA-904 here ... maybe a bug in 12c
         with a as (
           select /*+ MATERIALIZE */ * from all_directories
-        ) select directory_name into l_dirname 
+        ) select directory_name into l_dirname
         from a
         where file_pkg.remove_multiple_separators(directory_path) = l_dirpath;
-      else 
+      else
         -- Inline View with MATERIALIZE hint to avoid ORA-904 here ... maybe a bug in 12c
         with a as (
           select /*+ MATERIALIZE */ * from all_directories
-        ) select directory_name into l_dirname 
+        ) select directory_name into l_dirname
         from a
         where file_pkg.remove_multiple_separators(directory_path) is null;
       end if;
-    exception 
+    exception
       when NO_DATA_FOUND then
-        raise_application_error(-20000, 'NO DIRECTORY OBJECT PRESENT FOR THIS FILE_TYPE', true); 
+        raise_application_error(-20000, 'NO DIRECTORY OBJECT PRESENT FOR THIS FILE_TYPE', true);
       when TOO_MANY_ROWS then
-        raise_application_error(-20000, 'TOO MANY DIRECTORY OBJECTS MATCH THIS FILE_TYPE', true); 
+        raise_application_error(-20000, 'TOO MANY DIRECTORY OBJECTS MATCH THIS FILE_TYPE', true);
     end;
     return l_dirname;
-  end; 
+  end;
 end;
 /
 sho err
@@ -119,10 +119,10 @@ create or replace package body file_pkg is
     p_directory in file_type
   ) return file_list_type
   is language java name 'FileType.getRecursiveFileList(oracle.sql.STRUCT) return oracle.sql.ARRAY';
-  
+
   function get_path_separator return varchar2
   is language java name 'FileType.getPathSeparator() return java.lang.String';
-  
+
   function get_root_directories return file_list_type
   is language java name 'FileType.getRootList() return oracle.sql.ARRAY';
 
@@ -145,13 +145,13 @@ create or replace package body file_pkg is
   function get_files_from_list(p_files_count in number) return file_list_type
   is language java name 'FileType.readFiles(int) return oracle.sql.ARRAY';
 
-  procedure do_set_fs_encoding (p_fs_encoding in varchar2) 
+  procedure do_set_fs_encoding (p_fs_encoding in varchar2)
   is language java name 'FileType.setFsEncoding(java.lang.String)';
 
   procedure set_fs_encoding(p_fs_encoding in varchar2, p_reset_session boolean default true) is
     v_message varchar2(32767);
   begin
-    if p_reset_session then 
+    if p_reset_session then
       v_message := dbms_java.endsession;
     end if;
     do_set_fs_encoding(p_fs_encoding);
@@ -159,17 +159,17 @@ create or replace package body file_pkg is
 
   function get_fs_encoding return varchar2
   is language java name 'FileType.getFsEncoding() return java.lang.String';
-  
+
   function get_recursive_file_list_p (p_directory in file_type)
-  return file_list_type pipelined is 
+  return file_list_type pipelined is
     v_current_files file_list_type := null;
   begin
     prepare_recursive_file_list(p_directory);
     loop
       v_current_files := get_files_from_list(g_batch_size);
-      if v_current_files is null then 
+      if v_current_files is null then
         exit;
-      else 
+      else
         for i in v_current_files.first..v_current_files.last loop
           pipe row (v_current_files(i));
         end loop;
@@ -179,15 +179,15 @@ create or replace package body file_pkg is
   end get_recursive_file_list_p;
 
   function get_file_list_p(p_directory in file_type)
-  return file_list_type pipelined is 
+  return file_list_type pipelined is
     v_current_files file_list_type := null;
   begin
     prepare_file_list(p_directory);
     loop
       v_current_files := get_files_from_list(g_batch_size);
-      if v_current_files is null then 
+      if v_current_files is null then
         exit;
-      else 
+      else
         for i in v_current_files.first..v_current_files.last loop
           pipe row (v_current_files(i));
         end loop;
@@ -202,15 +202,15 @@ create or replace package body file_pkg is
   end get_file_list;
 
   function get_file_list_p(p_directory_name in varchar2)
-  return file_list_type pipelined is 
+  return file_list_type pipelined is
     v_current_files file_list_type := null;
   begin
     prepare_file_list(get_file(p_directory_name, ''));
     loop
       v_current_files := get_files_from_list(g_batch_size);
-      if v_current_files is null then 
+      if v_current_files is null then
         exit;
-      else 
+      else
         for i in v_current_files.first..v_current_files.last loop
           pipe row (v_current_files(i));
         end loop;
@@ -220,13 +220,13 @@ create or replace package body file_pkg is
   end get_file_list_p;
 
   function get_file(
-    p_directory in varchar2, 
+    p_directory in varchar2,
     p_filename in varchar2
   ) return file_type is
     l_path all_directories.directory_path%type;
   begin
     begin
-      select directory_path into l_path 
+      select directory_path into l_path
       from all_directories
       where directory_name = p_directory;
     exception
@@ -264,10 +264,10 @@ create or replace package body os_command is
   is language java name 'ExternalCall.setWorkingDir(oracle.sql.STRUCT)';
   procedure clear_working_dir
   is language java name 'ExternalCall.clearWorkingDir()';
-  function get_working_dir return FILE_TYPE 
+  function get_working_dir return FILE_TYPE
   is language java name 'ExternalCall.getWorkingDir() return oracle.sql.STRUCT';
-  
-  
+
+
   procedure clear_environment
   is language java name 'ExternalCall.clearEnv()';
   procedure set_env_var(p_env_name in varchar2, p_env_value in varchar2)
@@ -277,10 +277,12 @@ create or replace package body os_command is
   is language java name 'ExternalCall.removeEnvVar(java.lang.String)';
   function get_env_var(p_env_name in varchar2) return varchar2
   is language java name 'ExternalCall.getEnvVar(java.lang.String) return java.lang.String';
+$IF DBMS_DB_VERSION.VERSION >= 11 $THEN
   procedure load_env
   is language java name 'ExternalCall.loadEnv()';
   procedure load_env(p_env_name in varchar2)
   is language java name 'ExternalCall.loadEnv(java.lang.String)';
+$END
 
   procedure use_custom_env
   is language java name 'ExternalCall.activateEnv()';
@@ -288,7 +290,7 @@ create or replace package body os_command is
   is language java name 'ExternalCall.deactivateEnv()';
 
 
-  procedure set_Shell(p_shell_path in varchar2, p_shell_switch in varchar2) 
+  procedure set_Shell(p_shell_path in varchar2, p_shell_switch in varchar2)
   is language java name 'ExternalCall.setShell(java.lang.String, java.lang.String)';
 
   function get_shell return varchar2
@@ -347,7 +349,7 @@ create or replace package body os_command is
   function exec(p_command in varchar2, p_stdout in blob) return number
   is language java name 'ExternalCall.execOut(java.lang.String, oracle.sql.BLOB) return int';
 
-    
+
   function exec(p_command in varchar2, p_stdin in clob, p_stdout in clob, p_stderr in clob) return number
   is language java name 'ExternalCall.execOutErr(java.lang.String, oracle.sql.CLOB, oracle.sql.CLOB, oracle.sql.CLOB) return int';
   function exec(p_command in varchar2, p_stdin in clob, p_stdout in blob, p_stderr in blob) return number
@@ -374,7 +376,7 @@ create or replace package body lob_writer_plsql is
   ) is
     v_position pls_integer := 0;
     v_amount   pls_integer;
-  
+
     v_file     utl_file.file_type;
   begin
     v_file := utl_file.fopen(
@@ -414,7 +416,7 @@ create or replace package body lob_writer_plsql is
   ) is
     v_position pls_integer := 0;
     v_amount   pls_integer;
-  
+
     v_file     utl_file.file_type;
   begin
     v_file := utl_file.fopen(
@@ -457,13 +459,13 @@ create or replace package body file_security is
   function translate_privs(p_permission in pls_integer) return varchar2 is
     v_privs varchar2(4000);
   begin
-    if bitand(p_permission, READ) = READ  then 
+    if bitand(p_permission, READ) = READ  then
       v_privs := 'read,';
     end if;
-    if bitand(p_permission, WRITE) = WRITE then 
+    if bitand(p_permission, WRITE) = WRITE then
       v_privs := v_privs || 'write,';
     end if;
-    if bitand(p_permission, EXEC) = EXEC then 
+    if bitand(p_permission, EXEC) = EXEC then
       v_privs := v_privs || 'execute,';
     end if;
     v_privs := substr(v_privs, 1, length(v_privs) - 1);
@@ -473,8 +475,8 @@ create or replace package body file_security is
   procedure grant_permission(
     p_file_path  in varchar2,
     p_grantee    in varchar2,
-    p_permission in pls_integer  
-  ) is 
+    p_permission in pls_integer
+  ) is
   begin
     dbms_java.grant_permission(
       grantee => p_grantee,
@@ -487,7 +489,7 @@ create or replace package body file_security is
   procedure revoke_permission(
     p_file_path  in varchar2,
     p_grantee    in varchar2,
-    p_permission in pls_integer  
+    p_permission in pls_integer
   ) is
   begin
     dbms_java.revoke_permission(
@@ -497,11 +499,11 @@ create or replace package body file_security is
       permission_action => translate_privs(p_permission)
     );
   end revoke_permission;
-  
+
   procedure restrict_permission(
     p_file_path  in varchar2,
     p_grantee    in varchar2,
-    p_permission in pls_integer 
+    p_permission in pls_integer
   ) is
   begin
     dbms_java.restrict_permission(
@@ -533,14 +535,14 @@ create or replace package body file_security is
   end grant_stdin_stdout;
 
   function get_script_grant_java_privs(
-    p_directory in varchar2, 
+    p_directory in varchar2,
     p_grantee in varchar2 default null
   ) return varchar2 is
-    l_sql_grant_t varchar2(1000) := 
+    l_sql_grant_t varchar2(1000) :=
 '  dbms_java.grant_permission(
     grantee           => ''##GRANTEE##'',
     permission_type   => ''SYS:java.io.FilePermission'',
-    permission_name   => ''##DIR_PATH##'', 
+    permission_name   => ''##DIR_PATH##'',
     permission_action => ''##ACTION##''
   );';
     l_sql_grant     varchar2(4000);
@@ -551,24 +553,24 @@ create or replace package body file_security is
   begin
     begin
       select directory_path into l_dir_path
-      from all_directories 
+      from all_directories
       where directory_name = p_directory;
     exception
       when NO_DATA_FOUND then
         raise_application_error(-20000, 'DIRECTORY DOES NOT EXIST', true);
     end;
-    
+
     l_sql_grant_all := 'begin'||chr(10)||chr(10);
     for u in (
-      select distinct grantee 
+      select distinct grantee
       from all_tab_privs tp, all_directories ad
-      where tp.table_name = ad.directory_name 
+      where tp.table_name = ad.directory_name
       and  tp.table_name = p_directory and (tp.grantee = p_grantee or p_grantee is null)
-    ) loop  
+    ) loop
       l_dir_privs := '';
       l_sql_grant := l_sql_grant_t;
       for g in (
-        select privilege 
+        select privilege
         from all_tab_privs tp, all_directories ad
         where tp.table_name = ad.directory_name and tp.table_schema='SYS' and
               tp.table_name = p_directory and tp.grantee = u.grantee
@@ -583,7 +585,7 @@ create or replace package body file_security is
     end loop;
     l_sql_grant_all := l_sql_grant_all||'end;';
     return l_sql_grant_all;
-  end get_script_grant_java_privs;   
+  end get_script_grant_java_privs;
 end file_security;
 /
 sho err
@@ -598,4 +600,3 @@ create or replace package body file_pkg_version is
 end file_pkg_version;
 /
 sho err
-
