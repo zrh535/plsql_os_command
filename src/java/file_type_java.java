@@ -1,5 +1,7 @@
 create or replace and resolve java source named "FILE_TYPE_JAVA" as
 import java.io.*;
+import java.security.MessageDigest;
+import java.security.DigestInputStream;
 import oracle.jdbc.*;
 import oracle.jdbc2.*;
 import oracle.sql.*;
@@ -564,7 +566,8 @@ public class FileType implements SQLData {
     } catch (Exception e) {
       clobWriter.flush();
       clobWriter.close();
-      fileContent = null;
+      // fileContent = null;
+      fileContent.setString(1,e.toString() + "\n" + System.getProperty("user.name"));
     } finally {
       if (fileReader != null) {
        fileReader.close();
@@ -604,6 +607,44 @@ public class FileType implements SQLData {
       }
     }
     return fileContent;
+  }
+
+  public String getHash(String pHash) throws Exception {
+    File f = new File(filePath);
+    MessageDigest digest = null;
+    InputStream         fileReader  = null;
+    DigestInputStream digestInputStream = null;
+    StringBuilder sb = new StringBuilder();
+
+    byte[] bBuffer = null;
+    byte[] md5 = null;
+
+    CLOB fileContent = CLOB.createTemporary(con, true, CLOB.DURATION_CALL);
+    bBuffer = new byte[fileContent.getChunkSize()];
+
+    try {
+      fileReader = new FileInputStream(f);
+      digestInputStream = new DigestInputStream(fileReader, MessageDigest.getInstance(pHash));
+      digest = digestInputStream.getMessageDigest();
+      while (digestInputStream.read(bBuffer) > -1) { }
+      digestInputStream.close();
+      md5 = digest.digest();
+
+      for (byte b : md5) {
+          sb.append(String.format("%02X", b));
+      }
+    } catch (Exception e) {
+      sb = null;
+    } finally {
+      if (fileReader != null) {
+       fileReader.close();
+      }
+      if (digestInputStream != null) {
+        digestInputStream.close();
+       }
+    }
+
+    return sb.toString().toLowerCase();
   }
 
   private void deleteRecursive(File currentDir) throws Exception {

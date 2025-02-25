@@ -20,10 +20,6 @@ grant execute on java source "OS_HELPER" to public
 /
 grant execute on java source "FILE_TYPE_JAVA" to public
 /
-create public synonym "ExternalCall" for "ExternalCall"
-/
-create public synonym "FileType" for "FileType"
-/
 grant execute on "ExternalCall" to public
 /
 grant execute on "FileType" to public
@@ -39,6 +35,10 @@ grant execute on FILE_TYPE to public
 grant execute on FILE_LIST_TYPE to public
 /
 grant execute on file_security to public
+/
+create public synonym "ExternalCall" for "ExternalCall"
+/
+create public synonym "FileType" for "FileType"
 /
 create public synonym OS_COMMAND for OS_COMMAND
 /

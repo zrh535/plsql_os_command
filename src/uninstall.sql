@@ -13,6 +13,8 @@ drop type FILE_LIST_TYPE
 /
 drop type FILE_TYPE
 /
+drop package file_pkg_version
+/
 drop package file_security
 /
 drop package file_pkg
@@ -26,6 +28,8 @@ drop public synonym OS_COMMAND
 drop public synonym lob_writer_plsql
 /
 drop public synonym file_list_type
+/
+drop public synonym file_pkg_version
 /
 drop public synonym file_security
 /

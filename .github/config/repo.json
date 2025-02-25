@@ -1,0 +1,50 @@
+{
+  "allow_auto_merge": false,
+  "allow_forking": true,
+  "allow_merge_commit": true,
+  "allow_rebase_merge": true,
+  "allow_squash_merge": true,
+  "allow_update_branch": false,
+  "archived": false,
+  "default_branch": "master",
+  "delete_branch_on_merge": false,
+  "description": "PL/SQL operating system and filesystem integration, copied from Carsten Czarski's work at http://plsqlexecoscomm.sourceforge.net/",
+  "disabled": false,
+  "has_discussions": false,
+  "has_downloads": true,
+  "has_issues": true,
+  "has_pages": false,
+  "has_projects": true,
+  "has_wiki": true,
+  "homepage": "",
+  "is_template": false,
+  "license": {
+    "key": "unlicense",
+    "name": "The Unlicense",
+    "node_id": "MDc6TGljZW5zZTE1",
+    "spdx_id": "Unlicense",
+    "url": "https://api.github.com/licenses/unlicense"
+  },
+  "merge_commit_message": "PR_TITLE",
+  "merge_commit_title": "MERGE_MESSAGE",
+  "private": false,
+  "security_and_analysis": {
+    "dependabot_security_updates": {
+      "status": "disabled"
+    },
+    "secret_scanning": {
+      "status": "disabled"
+    },
+    "secret_scanning_push_protection": {
+      "status": "disabled"
+    },
+    "secret_scanning_validity_checks": {
+      "status": "disabled"
+    }
+  },
+  "squash_merge_commit_message": "COMMIT_MESSAGES",
+  "squash_merge_commit_title": "COMMIT_OR_PR_TITLE",
+  "use_squash_pr_title_as_default": false,
+  "visibility": "public",
+  "web_commit_signoff_required": false
+}

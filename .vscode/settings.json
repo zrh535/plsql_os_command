@@ -1,0 +1,11 @@
+{
+  "java.project.referencedLibraries": [
+    "lib/**/*.jar",
+    "c:\\Oracle\\JDBC\\oracle_12.1_odjbc-full\\ojdbc7.jar",
+    "c:\\Oracle\\JDBC\\oracle_12.1_odjbc-full\\ons.jar",
+    "c:\\Oracle\\JDBC\\oracle_12.1_odjbc-full\\orai18n.jar",
+    "c:\\Oracle\\JDBC\\oracle_12.1_odjbc-full\\simplefan.jar",
+    "c:\\Oracle\\JDBC\\oracle_12.1_odjbc-full\\ucp.jar",
+    "c:\\Oracle\\JDBC\\oracle_12.1_odjbc-full\\xdb6.jar"
+  ]
+}

@@ -40,6 +40,8 @@ create type FILE_TYPE authid current_user as object
     is language java name 'FileType.appendStringToFile(java.lang.String) return long',
   member function get_content_as_blob return blob
     is language java name 'FileType.getContentBLOB() return oracle.sql.BLOB',
+  member function get_hash(p_hash in varchar2) return varchar2
+    is language java name 'FileType.getHash(java.lang.String) return java.lang.String',
   member function get_parent return file_type
     is language java name 'FileType.getParent() return oracle.sql.STRUCT',
   member procedure open_stream
